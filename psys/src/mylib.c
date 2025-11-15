@@ -14,9 +14,9 @@
 #define __TYPES__
 
 #include <stdio.h>
+#include <string.h>
 #ifdef HIRES
 #include <stdlib.h>
-#include <string.h>
 #endif  /* HIRES */
 #include <math.h>
 
@@ -430,7 +430,7 @@ static XSizeHints WinSizeHints = {
   { 0, 0 },                          /*  max_aspect             */
 };
 
-static char *progname = "mylib";
+static char progname[256] = "mylib";
 
 void GeneralTransform(x, y)
 int *x, *y;
@@ -960,12 +960,49 @@ void WindowInitialize()
 			   DefaultVisual(m_display, screennum),
 			   WinAttrMask, &WinAttr);
 
-  Xfprintf(stderr, "XStoreName()\n");
-  XStoreName(m_display, m_window, "mylib");
-  Xfprintf(stderr, "XSetIconName()\n");
-  XSetIconName(m_display, m_window, "mylib");
+  /* Set window name based on program name */
+  {
+    char winname[256];
+    char *basename;
+    char *chipmunk_mode = getenv("CHIPMUNK_MODE");
+    
+    /* If CHIPMUNK_MODE=analog is set, use "analog" as window name */
+    if (chipmunk_mode && strcmp(chipmunk_mode, "analog") == 0) {
+      strcpy(winname, "analog");
+    } else if (P_argv && P_argv[0] && *P_argv[0]) {
+      /* Extract basename from path */
+      basename = strrchr(P_argv[0], '/');
+      if (basename)
+        basename++;
+      else
+        basename = P_argv[0];
+      strncpy(winname, basename, sizeof(winname) - 1);
+      winname[sizeof(winname) - 1] = '\0';
+      /* Remove any extension */
+      {
+        char *dot = strrchr(winname, '.');
+        if (dot && dot != winname)
+          *dot = '\0';
+      }
+    } else {
+      strcpy(winname, "analog");
+    }
+    Xfprintf(stderr, "XStoreName()\n");
+    XStoreName(m_display, m_window, winname);
+    Xfprintf(stderr, "XSetIconName()\n");
+    XSetIconName(m_display, m_window, winname);
+    /* Update progname for XSetCommand */
+    strncpy(progname, winname, sizeof(progname) - 1);
+    progname[sizeof(progname) - 1] = '\0';
+  }
   Xfprintf(stderr, "XSetCommand()\n");
-  XSetCommand(m_display, m_window, &progname, 1);
+  {
+    /* XSetCommand expects char **argv, not char (*)[256] */
+    char *argv_array[2];
+    argv_array[0] = progname;
+    argv_array[1] = NULL;
+    XSetCommand(m_display, m_window, argv_array, 1);
+  }
   Xfprintf(stderr, "XSetWMHints()\n");
   XSetWMHints(m_display, m_window, &WinWMHints);
   Xfprintf(stderr, "XSetNormalHints()\n");

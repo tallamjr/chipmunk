@@ -4,7 +4,42 @@
 # This ensures the program can find its configuration files and loads analog.cnf
 CHIPMUNK_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 export LOGLIB="${CHIPMUNK_DIR}/log/lib"
+export CHIPMUNK_MODE=analog
 
-# Use -c option to explicitly load analog.cnf configuration
-# This ensures analog mode is used even if the binary is called diglog
-exec "${CHIPMUNK_DIR}/bin/diglog" -c analog.cnf "$@"
+# Handle help options (check for --help or standalone -h, but not -h with argument)
+if [ "$1" = "--help" ] || ([ "$1" = "-h" ] && [ -z "$2" ]); then
+    echo "Analog Circuit Simulator - Chipmunk Tools"
+    echo ""
+    echo "Usage:"
+    echo "  ./bin/analog [options] [circuit_file.lgf]"
+    echo ""
+    echo "Options:"
+    echo "  -h, --help    Show this help message"
+    echo "  -c <file>     Specify configuration file (default: analog.cnf)"
+    echo "  -v            Vanilla LOG mode (no CNF file)"
+    echo "  -x <display>  Specify X display name"
+    echo "  -h <dir>      Specify home directory (use --help for help)"
+    echo ""
+    echo "Examples:"
+    echo "  ./bin/analog                           # Start with lesson1.lgf (for beginners)"
+    echo "  ./bin/analog log/lib/lesson1.lgf       # Open a specific circuit file"
+    echo "  ./bin/analog -c log/lib/mos_example.cnf # Use custom configuration"
+    echo ""
+    echo "For more information, see: https://john-lazzaro.github.io/chipmunk/document/log/index.html"
+    exit 0
+fi
+
+# If no arguments provided, open lesson1.lgf for first-time users
+if [ $# -eq 0 ]; then
+    LESSON_FILE="${CHIPMUNK_DIR}/log/lib/lesson1.lgf"
+    if [ -f "$LESSON_FILE" ]; then
+        exec "${CHIPMUNK_DIR}/bin/diglog" -c analog.cnf "$LESSON_FILE"
+    else
+        # If lesson file doesn't exist, just start normally
+        exec "${CHIPMUNK_DIR}/bin/diglog" -c analog.cnf
+    fi
+else
+    # Use -c option to explicitly load analog.cnf configuration
+    # This ensures analog mode is used even if the binary is called diglog
+    exec "${CHIPMUNK_DIR}/bin/diglog" -c analog.cnf "$@"
+fi

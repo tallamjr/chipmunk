@@ -2,6 +2,8 @@
 #define HIRES
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #ifdef VARARGS
 #include <varargs.h>
 #else
@@ -98,7 +100,7 @@ static XSizeHints WinSizeHints = {
   { 0, 0 },                           /*  max_aspect             */
 };
 
-static char *progname = "newcrt";
+static char progname[256] = "newcrt";
 
 static nc_windowRec __nc_curWindow = {
   0, TextH, 0, TextW,
@@ -195,9 +197,48 @@ static void WindowInitialize()
  
   /* End of revised section. */
 
-  XStoreName(m_display, nc_window, "newcrt");
-  XSetIconName(m_display, nc_window, "newcrt");
-  XSetCommand(m_display, nc_window, &progname, 1);
+  /* Set window name based on program name with "-console" suffix */
+  {
+    char winname[256];
+    char *basename;
+    char *chipmunk_mode = getenv("CHIPMUNK_MODE");
+    
+    /* If CHIPMUNK_MODE=analog is set, use "analog-console" as window name */
+    if (chipmunk_mode && strcmp(chipmunk_mode, "analog") == 0) {
+      strcpy(winname, "analog-console");
+    } else if (P_argv && P_argv[0] && *P_argv[0]) {
+      /* Extract basename from path */
+      basename = strrchr(P_argv[0], '/');
+      if (basename)
+        basename++;
+      else
+        basename = P_argv[0];
+      strncpy(winname, basename, sizeof(winname) - 20); /* Leave room for "-console" */
+      winname[sizeof(winname) - 20] = '\0';
+      /* Remove any extension */
+      {
+        char *dot = strrchr(winname, '.');
+        if (dot && dot != winname)
+          *dot = '\0';
+      }
+      /* Append "-console" */
+      strncat(winname, "-console", sizeof(winname) - strlen(winname) - 1);
+    } else {
+      strcpy(winname, "analog-console");
+    }
+    XStoreName(m_display, nc_window, winname);
+    XSetIconName(m_display, nc_window, winname);
+    /* Update progname for XSetCommand */
+    strncpy(progname, winname, sizeof(progname) - 1);
+    progname[sizeof(progname) - 1] = '\0';
+  }
+  {
+    /* XSetCommand expects char **argv, not char (*)[256] */
+    char *argv_array[2];
+    argv_array[0] = progname;
+    argv_array[1] = NULL;
+    XSetCommand(m_display, nc_window, argv_array, 1);
+  }
   XSetWMHints(m_display, nc_window, &WinWMHints);
   XSetNormalHints(m_display, nc_window, &WinSizeHints);
 

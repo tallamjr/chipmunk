@@ -1,5 +1,9 @@
 # Chipmunk Tools
 
+![Analog Circuit Simulator](docs/analog.png)
+
+![Analog Console Window](docs/analog-console.png)
+
 This repository contains the Chipmunk system tools, originally developed by Dave Gillespie, John Lazzaro, and others.
 
 ## Original Source
@@ -76,6 +80,73 @@ This repository includes the following modifications:
 
 The wrapper scripts automatically configure the `LOGLIB` environment variable and load the appropriate configuration file (`analog.cnf` for analog mode).
 
+## Configuration Files
+
+Chipmunk uses `.cnf` (configuration) files to define gate libraries, device models, and simulation parameters. These files are located in the `log/lib/` directory.
+
+### Default Configuration Files
+
+- **`log/lib/analog.cnf`**: Default configuration for analog simulation mode (loaded automatically by `./bin/analog`)
+- **`log/lib/diglog.cnf`**: Default configuration for digital simulation mode
+- **`log/lib/genlog.cnf`**: General Log configuration
+- **`log/lib/log.cnf`**: Base Log configuration
+
+### Sample Configuration Files
+
+- **`log/lib/mos_example.cnf`**: Example MOS process parameter file with annotations
+- **`log/lib/mos.cnf`**: MOS transistor model configuration
+- **`log/lib/mos14tb.cnf`**, **`log/lib/mos26g.cnf`**, **`log/lib/mosscn12.cnf`**: Various MOS process configurations
+- **`log/lib/vlsi.cnf`**: VLSI-specific configuration
+- **`log/lib/actellog.cnf`**: Actel FPGA configuration
+- **`log/lib/logntk.cnf`**: LOG-to-NTK conversion configuration
+- **`log/lib/logspc.cnf`**: LOG-to-SPICE conversion configuration
+- **`log/lib/lplot.cnf`**: Plotting configuration
+- **`log/lib/pens.cnf`**: Pen/color configuration
+- **`log/lib/models.cnf`**: Device model definitions
+- **`log/lib/groups.cnf`**: Gate group definitions
+
+### Using Custom Configuration Files
+
+You can specify a custom configuration file using the `-c` option:
+
+```bash
+./bin/analog -c log/lib/mos_example.cnf
+```
+
+Configuration files define:
+- Available gate libraries and their locations
+- Device model parameters (MOS transistors, resistors, capacitors, etc.)
+- Simulation defaults
+- Display and plotting options
+
+## Sample Circuits for Learning
+
+Chipmunk includes **interactive lesson files** designed for learning analog simulation. These are located in `log/lib/`:
+
+- **`lesson1.lgf`**: First interactive lesson (recommended for beginners)
+- **`lesson2.lgf`**: Second lesson
+- **`lesson3.lgf`**: Third lesson
+- **`lesson4.lgf`**: Fourth lesson
+- **`lesson5.lgf`**: Fifth lesson
+
+These lessons are annotated circuit schematics that form an interactive tutorial for learning Analog. They were developed by Dave Gillespie and are described in the [official documentation](https://john-lazzaro.github.io/chipmunk/document/log/index.html#interactive-lessons).
+
+### Opening Sample Circuits
+
+To open a lesson circuit on startup:
+
+```bash
+./bin/analog log/lib/lesson1.lgf
+```
+
+**Recommendation for first-time users**: Start with `lesson1.lgf` to learn the basics of analog circuit simulation.
+
+### Other Sample Circuits
+
+- **`log/lib/spctest.lgf`**: SPICE test circuit
+- **`log/lib/spcfet5.lgf`**: FET5 model test circuit
+- **`log/lib/pwl-test.lgf`**: Piecewise linear source test circuit
+
 ## Usage
 
 ### Running Analog Simulator
@@ -90,11 +161,81 @@ The `analog` command launches the Log system in analog simulation mode:
 
 ### Command Line Options
 
+- `-h`, `--help`: Show help message and exit
 - `-c <file>`: Specify configuration file (default: `analog.cnf`)
 - `-v`: Vanilla LOG mode (no CNF file)
 - `-x <display>`: Specify X display name
-- `-h <dir>`: Specify home directory
+- `-h <dir>`: Specify home directory (note: use `--help` for help, not `-h` alone)
 - `file`: Open a circuit file on startup
+
+**Note**: When run without arguments, `analog` automatically opens `lesson1.lgf` (the first interactive tutorial) to help new users get started.
+
+## Keyboard Shortcuts
+
+The Chipmunk interface uses a custom, full-screen interface that may not be immediately intuitive. The following keyboard shortcuts are available for manipulating schematics:
+
+### Navigation and View
+- **Space**: Refresh screen
+- **`<`** / **`>`**: Zoom out / Zoom in
+- **Arrow keys**: Scroll the schematic
+- **`h`**: Home (return to origin)
+- **`G`**: Toggle grid display
+- **`A`**: Auto-window (fit circuit to window)
+
+### Editing Commands
+- **`C`**: Open Gate Catalog
+- **`c`**: Configure mode (configure gates)
+- **`d`**: Delete mode
+- **`m`**: Move mode
+- **`M`**: Tap mode
+- **`r`**: Rotate mode
+- **`l`**: Label mode
+- **`L`**: Load circuit file
+- **`/`**: Copy mode
+- **`*`**: Paste
+- **`.`**: Probe mode (measure signals)
+- **`b`**: Box mode
+- **`g`**: Glow mode
+- **`i`**: Invisible mode
+- **`I`**: Invert label
+- **`n`**: Invert pin numbers
+- **`o`**: On/Off toggle
+
+### Simulation and Analysis
+- **`s`**: Open Scope screen
+- **`0`** or **`R`**: Reset simulator (time=0)
+- **`f`**: Fast mode
+- **`p`**: Plot circuit
+- **`e`** / **`E`**: Examine mode
+- **`k`**: Show conflicts
+
+### Pages and Organization
+- **`1`-`9`**: Switch to page 1-9
+- **`+`**: Next page
+- **`-`**: Previous page
+
+### Other Commands
+- **`?`**: Help
+- **`:`**: Do command
+- **`!`**: Shell command
+- **`q`**: Quit/exit Help
+- **Ctrl-C**: Cancel current mode
+- **Ctrl-D**: Exit program
+
+### Mouse Interactions
+- **Left button press + drag**: Move objects
+- **Left button tap**: Rotate gates, configure gates, draw wires
+- **Right button**: Cancel wire-drawing and other simple modes
+- **Drag off screen edge**: Delete objects
+- **Touch CAT button**: Open Gate Catalog (can drag gates from catalog)
+
+### Important Notes
+- The interface is **full-custom** and uses a unique interaction model
+- T-connections (T-junctions) automatically connect; crossing wires must be manually soldered
+- Red dots must be aligned when connecting gates together
+- Use the **cheat sheet** (`log/lib/cheat.text`) for quick reference
+
+**Note**: This interface follows a custom design from the 1990s and does not use modern UI conventions (e.g., Ctrl+C/V/X for copy/paste/cut). See TODO list for planned UI modernization.
 
 ## Documentation
 
@@ -136,6 +277,15 @@ Original authors:
 - Maryann Maher
 
 Maintained under Unix by Dave Gillespie and John Lazzaro.
+
+## TODO / Future Improvements
+
+- **UI Modernization**: Modernize the user interface to conventional standards:
+  - Adopt standard keyboard shortcuts (Ctrl+C/V/X/Z for copy/paste/cut/undo)
+  - Implement standard menu layouts and toolbars
+  - Modern interaction patterns (context menus, drag-and-drop, etc.)
+  - Improve discoverability of features and reduce learning curve
+  - Maintain backward compatibility with existing workflows
 
 ## Repository Information
 
