@@ -1,0 +1,33 @@
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+core
+*.core
+
+# Editor backup files
+*~
+*.swp
+*.swo
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Compiled binaries (keep source, ignore if binaries are generated)
+# Uncomment if you don't want to track compiled binaries
+# bin/*
+
+# Build directories (if any)
+build/
+dist/
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+

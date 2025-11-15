@@ -1,0 +1,6 @@
+#!/bin/bash
+# Wrapper script for diglog that sets the LOGLIB environment variable
+export LOGLIB="${CHIPMUNK_HOME:-/home/tobi/chipmunk}/log/lib"
+exec "${CHIPMUNK_HOME:-/home/tobi/chipmunk}/bin/diglog" "$@"
+
+

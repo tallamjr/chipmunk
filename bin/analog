@@ -1,0 +1,7 @@
+#!/bin/bash
+# Wrapper script for analog that sets the LOGLIB environment variable
+# This ensures the program can find its configuration files
+CHIPMUNK_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+export LOGLIB="${CHIPMUNK_DIR}/log/lib"
+exec "${CHIPMUNK_DIR}/bin/diglog" "$@"
+
