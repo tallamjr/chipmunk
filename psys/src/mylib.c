@@ -4963,8 +4963,20 @@ boolean m_pollkbd()
                  /* but may be too drastic (MDG)                          */
     switch (event.type) {
     case KeyPress: 
+      /* Check for arrow keys via KeySym first - XLookupString may return 0 for them */
+      sym = XLookupKeysym((XKeyEvent *)&event, 0);
+      if (sym == XK_Up || sym == XK_KP_Up || sym == XK_Down || sym == XK_KP_Down ||
+	  sym == XK_Left || sym == XK_KP_Left || sym == XK_Right || sym == XK_KP_Right) {
+	XPutBackEvent(m_display, &event);
+	return(1);
+      }
       if (XLookupString((XKeyEvent *)&event, buf, 10, &sym, NULL)) {
 	Xfprintf(stderr, "XPutBackEvent()  (m_pollkbd() Key event)\n");
+	XPutBackEvent(m_display, &event);
+	return(1);
+      } else {
+	/* Even if XLookupString fails, if it's a keypress, we should return true */
+	/* This handles keys that don't have string representations (like arrow keys) */
 	XPutBackEvent(m_display, &event);
 	return(1);
       }
@@ -5033,8 +5045,28 @@ uchar m_inkey()
                           StructureNotifyMask, &event);
     nc_cursor_off();
     if (event.type == KeyPress) {
-      if (XLookupString((XKeyEvent *)&event, buf, 10, &sym, NULL))
-	return(buf[0]);
+      /* First try XLookupString - XRebindKeysym should make arrow keys return scroll codes */
+      if (XLookupString((XKeyEvent *)&event, buf, 10, &sym, NULL)) {
+	/* Check if this is an arrow key character (from XRebindKeysym) */
+	if (buf[0] == '\037' || buf[0] == '\n' || buf[0] == '\b' || buf[0] == '\034') {
+	  return((uchar) buf[0]);
+	}
+	/* Regular character */
+	return((uchar) buf[0]);
+      }
+      /* If XLookupString returns 0, try XLookupKeysym as fallback for arrow keys */
+      /* This handles cases where XRebindKeysym didn't work or the key isn't rebound */
+      sym = XLookupKeysym((XKeyEvent *)&event, 0);
+      if (sym == XK_Up || sym == XK_KP_Up) {
+	return((uchar) '\037');  /* Up arrow -> scroll up */
+      } else if (sym == XK_Down || sym == XK_KP_Down) {
+	return((uchar) '\n');    /* Down arrow -> scroll down */
+      } else if (sym == XK_Left || sym == XK_KP_Left) {
+	return((uchar) '\b');    /* Left arrow -> scroll left */
+      } else if (sym == XK_Right || sym == XK_KP_Right) {
+	return((uchar) '\034');  /* Right arrow -> scroll right */
+      }
+      /* If neither XLookupString nor XLookupKeysym worked, continue loop */
     } else if ((event.type == Expose) && (event.xexpose.window == m_window) &&
 	       (event.xexpose.count == 0)) {
 #ifdef SHOW_EXPOSE_EVENTS
@@ -5079,11 +5111,36 @@ uchar m_inkeyn()
       return(0);
     else {
       if (event.type == KeyPress) {
+	/* First try XLookupString - XRebindKeysym should make arrow keys return scroll codes */
 	if (XLookupString((XKeyEvent *)&event, buf, 10, &sym, NULL)) {
+	  /* Check if this is an arrow key character (from XRebindKeysym) */
+	  if (buf[0] == '\037' || buf[0] == '\n' || buf[0] == '\b' || buf[0] == '\034') {
+	    XPutBackEvent(m_display, &event);
+	    return((uchar) buf[0]);
+	  }
+	  /* Regular character */
 	  Xfprintf(stderr, "XPutBackEvent()  (m_inkeyn() Key event)\n");
 	  XPutBackEvent(m_display, &event);
 	  return(buf[0]);
-	  }
+	}
+	/* If XLookupString returns 0, try XLookupKeysym as fallback for arrow keys */
+	sym = XLookupKeysym((XKeyEvent *)&event, 0);
+	if (sym == XK_Up || sym == XK_KP_Up) {
+	  XPutBackEvent(m_display, &event);
+	  return((uchar) '\037');  /* Up arrow -> scroll up */
+	} else if (sym == XK_Down || sym == XK_KP_Down) {
+	  XPutBackEvent(m_display, &event);
+	  return((uchar) '\n');    /* Down arrow -> scroll down */
+	} else if (sym == XK_Left || sym == XK_KP_Left) {
+	  XPutBackEvent(m_display, &event);
+	  return((uchar) '\b');    /* Left arrow -> scroll left */
+	} else if (sym == XK_Right || sym == XK_KP_Right) {
+	  XPutBackEvent(m_display, &event);
+	  return((uchar) '\034');  /* Right arrow -> scroll right */
+	}
+	/* If neither worked, put event back and return 0 (no key available) */
+	XPutBackEvent(m_display, &event);
+	return(0);
       } else if ((event.type == Expose) && 
 		 (event.xexpose.window == m_window) &&
 		 (event.xexpose.count == 0)) {
@@ -5122,10 +5179,32 @@ uchar m_testkey()
                                      StructureNotifyMask, &event))
       return(0);
     if (event.type == KeyPress) {
+      /* First try XLookupString - XRebindKeysym should make arrow keys return scroll codes */
       if (XLookupString((XKeyEvent *)&event, buf, 10, &sym, NULL)) {
+	/* Check if this is an arrow key character (from XRebindKeysym) */
+	if (buf[0] == '\037' || buf[0] == '\n' || buf[0] == '\b' || buf[0] == '\034') {
+	  XPutBackEvent(m_display, &event);
+	  return((uchar) buf[0]);
+	}
+	/* Regular character */
 	Xfprintf(stderr, "XPutBackEvent()  (m_testkey() key event)\n");
 	XPutBackEvent(m_display, &event);
 	return(buf[0]);
+      }
+      /* If XLookupString returns 0, try XLookupKeysym as fallback for arrow keys */
+      sym = XLookupKeysym((XKeyEvent *)&event, 0);
+      if (sym == XK_Up || sym == XK_KP_Up) {
+	XPutBackEvent(m_display, &event);
+	return((uchar) '\037');  /* Up arrow -> scroll up */
+      } else if (sym == XK_Down || sym == XK_KP_Down) {
+	XPutBackEvent(m_display, &event);
+	return((uchar) '\n');    /* Down arrow -> scroll down */
+      } else if (sym == XK_Left || sym == XK_KP_Left) {
+	XPutBackEvent(m_display, &event);
+	return((uchar) '\b');    /* Left arrow -> scroll left */
+      } else if (sym == XK_Right || sym == XK_KP_Right) {
+	XPutBackEvent(m_display, &event);
+	return((uchar) '\034');  /* Right arrow -> scroll right */
       }
     } else if ((event.type == Expose) &&
 	       (event.xexpose.window == m_window) &&

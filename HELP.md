@@ -4,7 +4,7 @@
 
 ### First Steps
 1. **Run the simulator**: `./bin/analog`
-   - The tutorial circuit (`lesson1.lgf`) opens automatically for new users; open any other file with ./bin/analog file.lgf. 
+   - The tutorial circuit (`lesson1.lgf`) opens automatically for new users; open any other file with `./bin/analog file.lgf`. 
 2. **Get command-line help**: `./bin/analog --help`
 3. **In-program help**: Press `?` key or click the HELP button
 
@@ -33,9 +33,9 @@
 - **Space**: Refresh screen
 - **`<`** / **`>`**: Zoom out / Zoom in
 - **Arrow keys**: Scroll the schematic
-- **`h`**: Home (return to origin)
+- **`h`**: Home (return to origin and reset zoom to default)
 - **`G`**: Toggle grid display
-- **`A`**: Auto-window (fit circuit to window)
+- **`A`**: Auto-window mode (toggles automatic window raising for small screens; does NOT fit circuit to screen)
 
 ### Editing
 - **`C`**: Open Gate Catalog

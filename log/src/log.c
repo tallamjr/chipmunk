@@ -11309,8 +11309,29 @@ Static Void moveobject()
       pass();
       trykbd();
       pen();
+      /* Check for ABORT to cancel wire drawing */
+      if (!strcmp(gg.func, "ABORT")) {
+	gg.startpoint = false;
+	gg.movinghw = NULL;
+	gg.movingvw = NULL;
+	clipon();
+	m_colormode((long)m_xor);
+	if (gg.nearhw != NULL) {
+	  m_color((long)gg.color.wire[gg.nearhw->wcolr - log_wcol_normal]);
+	  hline(hx1, hx2, hy);
+	}
+	if (gg.nearvw != NULL) {
+	  m_color((long)gg.color.wire[gg.nearvw->wcolr - log_wcol_normal]);
+	  vline(vx, vy1, vy2);
+	}
+	m_colormode((long)m_normal);
+	clipoff();
+	remcursor();
+	clearfunc();
+	return;
+      }
     } while (gg.gridx == gg.posx && gg.gridy == gg.posy && gg.t.depressed &&
-	     strcmp(gg.func, "REFR"));
+	     strcmp(gg.func, "REFR") && strcmp(gg.func, "ABORT"));
     clipon();
     m_colormode((long)m_xor);
     if (gg.nearhw != NULL) {
@@ -11324,7 +11345,18 @@ Static Void moveobject()
     m_colormode((long)m_normal);
     clipoff();
     scroll();
-  } while (gg.t.depressed);
+  } while (gg.t.depressed && strcmp(gg.func, "ABORT"));
+  
+  /* If aborted, clean up and return */
+  if (!strcmp(gg.func, "ABORT")) {
+    gg.startpoint = false;
+    gg.movinghw = NULL;
+    gg.movingvw = NULL;
+    remcursor();
+    clearfunc();
+    return;
+  }
+  
   working();
   gg.movinghw = NULL;
   gg.movingvw = NULL;
