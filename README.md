@@ -8,8 +8,11 @@ This repository contains the Chipmunk system tools, originally developed by Dave
 
 ## Version
 
-- **Chipmunk/LOG Version**: 5.66
+- **This Repository Version**: 6.0.0
+- **Base Chipmunk/LOG Version**: 5.66
 - **SPICE Converter Version**: 1.0 Beta
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history and changes.
 
 ## Original Source
 

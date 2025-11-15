@@ -1,5 +1,8 @@
 # Top-level Makefile for Chipmunk Tools
 # This Makefile orchestrates the build of psys libraries and log tools
+#
+# Version: 6.0.0
+# Base Chipmunk Version: 5.66
 
 .PHONY: all build clean install default help check
 
