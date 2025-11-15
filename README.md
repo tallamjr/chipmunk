@@ -6,6 +6,46 @@
 
 This repository contains the Chipmunk system tools, originally developed by Dave Gillespie, John Lazzaro, and others.
 
+## Quick Start
+
+### For Ubuntu/WSL2 Users
+
+1. **Install dependencies:**
+   ```bash
+   sudo apt-get install gcc make libx11-dev xfonts-base xfonts-75dpi xfonts-100dpi
+   xset fp rehash
+   ```
+
+2. **Clone and build:**
+   ```bash
+   git clone https://github.com/sensorsINI/chipmunk.git
+   cd chipmunk
+   make build
+   ```
+
+3. **Run the simulator:**
+   ```bash
+   ./bin/analog
+   ```
+   The tutorial circuit (`lesson1.lgf`) will open automatically for first-time users.
+
+4. **Get help:**
+   ```bash
+   ./bin/analog --help
+   ```
+
+**That's it!** See [Building and Installation](#building-and-installation) for detailed instructions and troubleshooting.
+
+### Using Pre-built Binaries (Releases)
+
+Pre-built binaries are available in [GitHub Releases](https://github.com/sensorsINI/chipmunk/releases). Download the release archive, extract it, and run:
+
+```bash
+./bin/analog
+```
+
+**Note:** Pre-built binaries are for Linux x86_64. For other platforms or to customize the build, see [Building and Installation](#building-and-installation).
+
 ## Version
 
 - **This Repository Version**: 6.0.0
