@@ -21,8 +21,11 @@ log/src/ana/logdef.h
 *.log
 
 # Compiled binaries (keep source, ignore if binaries are generated)
-# Uncomment if you don't want to track compiled binaries
-# bin/*
+bin/diglog
+bin/loged
+bin/fixfet7
+log/src/log
+log/src/loged
 
 # Build directories (if any)
 build/
