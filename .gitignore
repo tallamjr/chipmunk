@@ -8,6 +8,8 @@ core
 
 # Generated files
 log/src/ana/logdef.h
+log/src/tooldir.c
+log/src/simdir.c
 
 # Editor backup files
 *~

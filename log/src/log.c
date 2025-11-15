@@ -742,13 +742,19 @@ Static Void initcolormap()
   m_setcolor((long)log_dred, 8L, 0L, 0L);
   m_setcolor((long)log_lgray, 10L, 10L, 10L);
   m_setcolor((long)log_cred, 15L, 0L, 0L);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
   m_vseecolors(0L, 16L, rcolormap, gcolormap, bcolormap);
+#pragma GCC diagnostic pop
 }
 
 
 Static Void fixcolormap()
 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
   m_vsetcolors(0L, 16L, rcolormap, gcolormap, bcolormap);
+#pragma GCC diagnostic pop
   recolor_log_cursors(gg.color.cursor, true);
 }
 

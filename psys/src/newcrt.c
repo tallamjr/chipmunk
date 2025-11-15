@@ -1156,6 +1156,10 @@ void nc_cursor_off()
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
+#pragma GCC diagnostic ignored "-Wint-conversion"
 
 char *nc_gets(buf)
 char *buf;
@@ -1238,6 +1242,7 @@ char *buf;
 }
 
 #pragma clang diagnostic pop
+#pragma GCC diagnostic pop
 
 char *nc_fgets(s, n, stream)
 char *s;
@@ -1264,4 +1269,3 @@ boolean nc_alphashared()
 {
   return false;
 }
-

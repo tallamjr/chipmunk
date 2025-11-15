@@ -3937,7 +3937,7 @@ static XPoint bezbuf[2048];
 static int bezbufp;
 static int bezthresh;
 
-int hitdet_bezier(x1, y1, x2, y2, x3, y3, x4, y4)
+int hitdet_bezier(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4)
 {
   int minx, maxx, miny, maxy;
 
@@ -5384,4 +5384,3 @@ void m_drawchar(cp)
 Anyptr *cp;
 {
 }
-

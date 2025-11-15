@@ -19,11 +19,13 @@ build: psys/src/libp2c.a bin/diglog
 # Build psys libraries (required before building log)
 psys/src/libp2c.a:
 	@echo "Building psys libraries..."
+	@echo "Note: Format-overflow warnings from legacy 1980s code are expected and suppressed."
 	$(MAKE) -C psys/src install
 
 # Build log tools (depends on psys)
 bin/diglog: psys/src/libp2c.a
 	@echo "Building log tools..."
+	@echo "Note: Format-overflow warnings from legacy 1980s code are expected and suppressed."
 	$(MAKE) -C log/src install
 
 # Clean all build artifacts
@@ -142,4 +144,3 @@ help:
 	@echo "  make help     - Show this help message"
 	@echo ""
 	@echo "After building, run: ./bin/analog"
-
