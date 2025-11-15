@@ -1,7 +1,7 @@
 # Top-level Makefile for Chipmunk Tools
 # This Makefile orchestrates the build of psys libraries and log tools
 
-.PHONY: all build clean install default help
+.PHONY: all build clean install default help check
 
 # Default target
 default: all
@@ -34,6 +34,10 @@ clean:
 # Install everything (same as build)
 install: build
 
+# Check system requirements (fonts, X11, etc.)
+check:
+	@./check_requirements.sh
+
 # Help target
 help:
 	@echo "Chipmunk Tools Makefile"
@@ -43,6 +47,7 @@ help:
 	@echo "  make build    - Build everything"
 	@echo "  make clean    - Remove all build artifacts"
 	@echo "  make install  - Build and install everything"
+	@echo "  make check    - Check system requirements (fonts, X11, etc.)"
 	@echo "  make help     - Show this help message"
 	@echo ""
 	@echo "After building, run: ./bin/analog"
