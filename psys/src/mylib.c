@@ -919,9 +919,31 @@ void WindowInitialize()
   char *usrgeo,*defgeo = {"1280x960+0+0"};  /* Default window size - can be overridden with -geometry or X resources */
   int  WinX, WinY, x_pad, y_pad;
   int WinW, WinH;
+  char saved_geo[256];
+  FILE *geo_file;
+  char *home;
 
 
   root = DefaultRootWindow(m_display);
+  
+  /* Try to load saved geometry from ~/.chipmunk_geometry */
+  home = getenv("HOME");
+  if (home != NULL) {
+    snprintf(saved_geo, sizeof(saved_geo), "%s/.chipmunk_geometry", home);
+    geo_file = fopen(saved_geo, "r");
+    if (geo_file != NULL) {
+      char line[256];
+      if (fgets(line, sizeof(line), geo_file) != NULL) {
+        /* Remove trailing newline */
+        line[strcspn(line, "\r\n")] = '\0';
+        /* Validate it looks like a geometry string (WxH format) */
+        if (strchr(line, 'x') != NULL && strlen(line) < 64) {
+          defgeo = strdup(line);  /* Use saved geometry as default */
+        }
+      }
+      fclose(geo_file);
+    }
+  }
 
   WinAttr.background_pixel = m_colors[m_black]->pixel;
   WinAttr.border_pixel = WhitePixel(m_display, DefaultScreen(m_display));
@@ -4651,9 +4673,52 @@ m_picturevar *p;
 
 /* This function raises the graphics window above the alpha window */
 
+/* Static variables to track last known good window size */
+static unsigned int last_window_width = 0;
+static unsigned int last_window_height = 0;
+
+/* Save current window geometry for next session */
+static void save_window_geometry()
+{
+  char *home;
+  char geo_path[512];
+  FILE *geo_file;
+  
+  home = getenv("HOME");
+  if (home == NULL || last_window_width == 0 || last_window_height == 0)
+    return;
+    
+  /* Validate reasonable size (not too small, not bigger than 4K screen) */
+  if (last_window_width < 400 || last_window_height < 300 || 
+      last_window_width > 3840 || last_window_height > 2160)
+    return;
+    
+  /* Save to ~/.chipmunk_geometry */
+  snprintf(geo_path, sizeof(geo_path), "%s/.chipmunk_geometry", home);
+  geo_file = fopen(geo_path, "w");
+  if (geo_file != NULL) {
+    fprintf(geo_file, "%dx%d+0+0\n", last_window_width, last_window_height);
+    fclose(geo_file);
+  }
+}
+
+/* Update tracked window size - called from ConfigureNotify handlers */
+static void update_window_size(unsigned int width, unsigned int height)
+{
+  last_window_width = width;
+  last_window_height = height;
+}
+
 void m_graphics_on()
 {
   XWindowChanges  changes;
+  static int geometry_save_registered = 0;
+
+  /* Register geometry save on first call */
+  if (!geometry_save_registered) {
+    atexit(save_window_geometry);
+    geometry_save_registered = 1;
+  }
 
   if (m_autoraise)
     {
@@ -5021,6 +5086,7 @@ boolean m_pollkbd()
       if ((event.xconfigure.window == m_window) &&
 	  ((event.xconfigure.width != m_across+1) ||
 	   (event.xconfigure.height != m_down+1))) {
+	update_window_size(event.xconfigure.width, event.xconfigure.height);
 	Xfprintf(stderr, "XPutBackEvent()  (m_pollkbd() resize event)\n");
 	XPutBackEvent(m_display, &event);
 	return(1);
@@ -5157,6 +5223,7 @@ uchar m_inkey()
 	       (event.xconfigure.window == m_window) &&
 	       ((event.xconfigure.width != m_across+1) ||
 		(event.xconfigure.height != m_down+1))) {
+      update_window_size(event.xconfigure.width, event.xconfigure.height);
 #ifdef SHOW_CONFIGURE_EVENTS
       fprintf(stderr, "m_inkey(): ConfigureNotify event detected\n");
 #endif /*SHOW_CONFIGURE_EVENTS*/
@@ -5279,6 +5346,7 @@ uchar m_inkeyn()
 		 (event.xconfigure.window == m_window) &&
 		 ((event.xconfigure.width != m_across+1) ||
 		  (event.xconfigure.height != m_down+1))) {
+	update_window_size(event.xconfigure.width, event.xconfigure.height);
 	m_across = event.xconfigure.width - 1;
 	m_down = event.xconfigure.height - 1;
 	Xfprintf(stderr, "XPutBackEvent()  (m_inkeyn() resize event)\n");
@@ -5397,6 +5465,7 @@ uchar m_testkey()
 	       (event.xconfigure.window == m_window) &&
 	       ((event.xconfigure.width != m_across+1) ||
 		(event.xconfigure.height != m_down+1))) {
+      update_window_size(event.xconfigure.width, event.xconfigure.height);
 #ifdef SHOW_CONFIGURE_EVENTS
       fprintf(stderr, "m_testkey(): ConfigureNotify event detected\n");
 #endif/* SHOW_CONFIGURE_EVENTS*/
