@@ -12223,14 +12223,20 @@ Static Void fitzoom()
   obj_height = y2 - y1;
   
   /* Ensure minimum dimensions to avoid division by zero */
-  if (obj_width < 10)
-    obj_width = 10;
-  if (obj_height < 10)
-    obj_height = 10;
+  if (obj_width < 1)
+    obj_width = 1;
+  if (obj_height < 1)
+    obj_height = 1;
   
   /* Calculate available view area */
   view_width = across - 2 * margin;
   view_height = baseline - 2 * margin;
+  
+  /* Ensure view area is reasonable */
+  if (view_width < 100)
+    view_width = 100;
+  if (view_height < 100)
+    view_height = 100;
   
   /* Calculate center of objects */
   center_x = (x1 + x2) / 2;
@@ -12238,8 +12244,16 @@ Static Void fitzoom()
   
   /* Calculate zoom levels that would fit width and height */
   /* zoom_x and zoom_y are the scale factors needed */
-  zoom_x = (view_width * log_scale0) / obj_width;
-  zoom_y = (view_height * log_scale0) / obj_height;
+  /* Using explicit checks to avoid any potential division issues */
+  if (obj_width > 0)
+    zoom_x = (view_width * log_scale0) / obj_width;
+  else
+    zoom_x = log_scale0;
+    
+  if (obj_height > 0)
+    zoom_y = (view_height * log_scale0) / obj_height;
+  else
+    zoom_y = log_scale0;
   
   /* Use the smaller zoom to ensure everything fits */
   new_zoom = (zoom_x < zoom_y) ? zoom_x : zoom_y;
