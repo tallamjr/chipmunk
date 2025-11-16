@@ -385,7 +385,7 @@ static long WindowEventMask = ExposureMask | KeyPressMask |
                               ButtonPressMask | ButtonReleaseMask |
                               PointerMotionMask | StructureNotifyMask |
                               EnterWindowMask | LeaveWindowMask |
-			      OwnerGrabButtonMask;
+			      OwnerGrabButtonMask | FocusChangeMask;
 
 static unsigned long WinAttrMask =
     CWBackPixel | CWBorderPixel | CWEventMask | GCForeground | GCBackground;
@@ -4689,12 +4689,24 @@ m_tablet_info *pen;
   XEvent event;
   int newx, newy;
   int gotevent, found = 0, giveup = 0;
+  static int ignore_next_click = 0;  /* Flag to ignore first click after window focus */
+  static Time last_focus_time = 0;
+  int check_focus;
 
   Pfprintf(stderr, "m_readpen(pen)\n");
 
 #ifdef EXTRA_BUFFERING
   flush_buffers();
 #endif /* EXTRA_BUFFERING */
+  
+  /* Check for FocusIn events to detect window activation */
+  while (XCheckMaskEvent(m_display, FocusChangeMask, &event)) {
+    if (event.type == FocusIn && event.xfocus.window == m_window) {
+      ignore_next_click = 1;
+      last_focus_time = event.xfocus.time;
+    }
+  }
+  
   while (1) {
     Xfprintf(stderr, "XCheckMaskEvent()\n");
     gotevent = XCheckMaskEvent(m_display, ButtonPressMask | PointerMotionMask |
@@ -4711,11 +4723,18 @@ m_tablet_info *pen;
 
   if (found) {
     if (event.type == ButtonPress) {
-      pen->dn = (event.xbutton.button == Button1);
-      pen->depressed = (event.xbutton.state & Button1Mask) || pen->dn;
-      pen->up = 0;
-      pen->near_ = ! (event.xbutton.state & Button3Mask) &&
-    	          ! (event.xbutton.button == Button3);
+      /* Ignore first click after window focus to prevent accidental wire-drawing */
+      if (ignore_next_click && event.xbutton.button == Button1) {
+        ignore_next_click = 0;
+        /* Act as if no event occurred */
+        found = 0;
+      } else {
+        pen->dn = (event.xbutton.button == Button1);
+        pen->depressed = (event.xbutton.state & Button1Mask) || pen->dn;
+        pen->up = 0;
+        pen->near_ = ! (event.xbutton.state & Button3Mask) &&
+    	            ! (event.xbutton.button == Button3);
+      }
     } else if (event.type == ButtonRelease) {
       pen->dn = 0;
       pen->up = (event.xbutton.button == Button1);

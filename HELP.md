@@ -58,6 +58,12 @@
 
 ## Common Workflows
 
+### Drawing Wires
+1. Tap to start a wire segment
+2. Tap again to end the segment and start a new one
+3. Press right button, Esc, or Ctrl-C to cancel wire-drawing
+4. Note: First click after window focus is ignored to prevent accidental wire-drawing
+
 ### Moving an Object
 1. Press `m` (move mode)
 2. Press and drag the object with left mouse button
@@ -69,10 +75,6 @@
 3. Use arrow keys to select attributes, left/right to change values
 4. Press Ctrl-C when done
 
-### Drawing Wires
-1. Tap to start a wire segment
-2. Tap again to end the segment and start a new one
-3. Press right button to cancel wire-drawing
 
 ### Getting Gates from Catalog
 1. Press `C` (or click CAT button) to open Gate Catalog
