@@ -45,3 +45,4 @@ chipmunk-crash.log
 # Test files
 test_crash_handler
 /tmp/chipmunk-crash-test.log
+.requirements_checked
