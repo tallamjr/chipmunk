@@ -5,6 +5,7 @@
 ### First Steps
 1. **Run the simulator**: `./bin/analog`
    - The tutorial circuit (`lesson1.lgf`) opens automatically for new users; open any other file with `./bin/analog file.lgf`. 
+   - Default window size is 1280x960. To customize, add to `~/.Xresources`: `mylib.geometry: 1600x1200+0+0`
 2. **Get command-line help**: `./bin/analog --help`
 3. **In-program help**: Press `?` key or click the HELP button
 

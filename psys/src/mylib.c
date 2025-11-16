@@ -916,7 +916,7 @@ void WindowInitialize()
   Pixmap p;
   GC tempgc;
   XEvent event;
-  char *usrgeo,*defgeo = {"512x390+0+0"};
+  char *usrgeo,*defgeo = {"1280x960+0+0"};  /* Default window size - can be overridden with -geometry or X resources */
   int  WinX, WinY, x_pad, y_pad;
   int WinW, WinH;
 
