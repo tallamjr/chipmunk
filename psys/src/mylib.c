@@ -4689,9 +4689,7 @@ m_tablet_info *pen;
   XEvent event;
   int newx, newy;
   int gotevent, found = 0, giveup = 0;
-  static int ignore_next_click = 0;  /* Flag to ignore first click after window focus */
-  static Time last_focus_time = 0;
-  int check_focus;
+  static int ignore_next_left_click = 0;  /* Counter: ignore left-clicks until this reaches 0 */
 
   Pfprintf(stderr, "m_readpen(pen)\n");
 
@@ -4702,8 +4700,11 @@ m_tablet_info *pen;
   /* Check for FocusIn events to detect window activation */
   while (XCheckMaskEvent(m_display, FocusChangeMask, &event)) {
     if (event.type == FocusIn && event.xfocus.window == m_window) {
-      ignore_next_click = 1;
-      last_focus_time = event.xfocus.time;
+      /* Set to ignore the next left-click */
+      ignore_next_left_click = 1;
+    } else if (event.type == FocusOut && event.xfocus.window == m_window) {
+      /* Reset on focus out */
+      ignore_next_left_click = 0;
     }
   }
   
@@ -4723,12 +4724,16 @@ m_tablet_info *pen;
 
   if (found) {
     if (event.type == ButtonPress) {
-      /* Ignore first click after window focus to prevent accidental wire-drawing */
-      if (ignore_next_click && event.xbutton.button == Button1) {
-        ignore_next_click = 0;
+      /* Ignore first left-click after window focus to prevent accidental wire-drawing */
+      if (ignore_next_left_click && event.xbutton.button == Button1) {
+        ignore_next_left_click = 0;  /* Clear flag after ignoring */
         /* Act as if no event occurred */
         found = 0;
       } else {
+        /* Any other button press clears the ignore flag */
+        if (event.xbutton.button != Button1) {
+          ignore_next_left_click = 0;
+        }
         pen->dn = (event.xbutton.button == Button1);
         pen->depressed = (event.xbutton.state & Button1Mask) || pen->dn;
         pen->up = 0;
