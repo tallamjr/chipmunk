@@ -5031,6 +5031,32 @@ uchar m_inkey()
   XEvent event;
   char buf[10];
   KeySym sym;
+  static int debug_esc = -1;  /* -1: uninit, 0: off, 1: on */
+  static int use_file = -1;
+  static char dbgpath[256];
+  auto void dbglog(const char *msg) {
+    if (debug_esc <= 0)
+      return;
+    if (use_file == -1) {
+      const char *p = getenv("CHIPMUNK_DEBUG_ESC_FILE");
+      if (p && *p) {
+        strncpy(dbgpath, p, sizeof(dbgpath) - 1);
+        dbgpath[sizeof(dbgpath) - 1] = '\0';
+        use_file = 1;
+      } else {
+        strcpy(dbgpath, "/tmp/chipmunk-esc.log");
+        use_file = 1;
+      }
+    }
+    FILE *f = fopen(dbgpath, "a");
+    if (f) {
+      fputs(msg, f);
+      fputc('\n', f);
+      fclose(f);
+    } else {
+      fprintf(stderr, "%s\n", msg);
+    }
+  }
 
   Kfprintf(stderr, "m_inkey()\n");
 
@@ -5052,11 +5078,28 @@ uchar m_inkey()
 	  return((uchar) buf[0]);
 	}
 	/* Regular character */
+	if ((unsigned char)buf[0] == 27) {
+	  if (debug_esc == -1) {
+	    const char *env = getenv("CHIPMUNK_DEBUG_ESC");
+	    debug_esc = (env && *env && (*env == '1' || *env == 'y' || *env == 'Y')) ? 1 : 0;
+	  }
+	  dbglog("[chipmunk] ESC detected at X layer (m_inkey) -> ^C");
+	  return((uchar) '\003');
+	}
 	return((uchar) buf[0]);
       }
-      /* If XLookupString returns 0, try XLookupKeysym as fallback for arrow keys */
+      /* If XLookupString returns 0, try XLookupKeysym as fallback for arrow keys and ESC */
       /* This handles cases where XRebindKeysym didn't work or the key isn't rebound */
       sym = XLookupKeysym((XKeyEvent *)&event, 0);
+      /* Check for Escape key */
+      if (sym == XK_Escape) {
+	if (debug_esc == -1) {
+	  const char *env = getenv("CHIPMUNK_DEBUG_ESC");
+	  debug_esc = (env && *env && (*env == '1' || *env == 'y' || *env == 'Y')) ? 1 : 0;
+	}
+	dbglog("[chipmunk] ESC keysym detected (m_inkey fallback) -> ^C");
+	return((uchar) '\003');
+      }
       if (sym == XK_Up || sym == XK_KP_Up) {
 	return((uchar) '\037');  /* Up arrow -> scroll up */
       } else if (sym == XK_Down || sym == XK_KP_Down) {
@@ -5065,6 +5108,14 @@ uchar m_inkey()
 	return((uchar) '\b');    /* Left arrow -> scroll left */
       } else if (sym == XK_Right || sym == XK_KP_Right) {
 	return((uchar) '\034');  /* Right arrow -> scroll right */
+      } else if ((event.xkey.state & ControlMask) &&
+                 (sym == XK_c || sym == XK_C)) {
+	if (debug_esc == -1) {
+	  const char *env = getenv("CHIPMUNK_DEBUG_ESC");
+	  debug_esc = (env && *env && (*env == '1' || *env == 'y' || *env == 'Y')) ? 1 : 0;
+	}
+	dbglog("[chipmunk] Ctrl-C detected (m_inkey) -> ^C");
+	return((uchar) '\003');
       }
       /* If neither XLookupString nor XLookupKeysym worked, continue loop */
     } else if ((event.type == Expose) && (event.xexpose.window == m_window) &&
@@ -5097,6 +5148,32 @@ uchar m_inkeyn()
   XEvent event;
   char buf[10];
   KeySym sym;
+  static int debug_esc = -1;  /* -1: uninit, 0: off, 1: on */
+  static int use_file = -1;
+  static char dbgpath[256];
+  auto void dbglog(const char *msg) {
+    if (debug_esc <= 0)
+      return;
+    if (use_file == -1) {
+      const char *p = getenv("CHIPMUNK_DEBUG_ESC_FILE");
+      if (p && *p) {
+        strncpy(dbgpath, p, sizeof(dbgpath) - 1);
+        dbgpath[sizeof(dbgpath) - 1] = '\0';
+        use_file = 1;
+      } else {
+        strcpy(dbgpath, "/tmp/chipmunk-esc.log");
+        use_file = 1;
+      }
+    }
+    FILE *f = fopen(dbgpath, "a");
+    if (f) {
+      fputs(msg, f);
+      fputc('\n', f);
+      fclose(f);
+    } else {
+      fprintf(stderr, "%s\n", msg);
+    }
+  }
 
   Kfprintf(stderr, "m_inkeyn()\n");
 
@@ -5121,10 +5198,28 @@ uchar m_inkeyn()
 	  /* Regular character */
 	  Xfprintf(stderr, "XPutBackEvent()  (m_inkeyn() Key event)\n");
 	  XPutBackEvent(m_display, &event);
+	  if ((unsigned char)buf[0] == 27) {
+	    if (debug_esc == -1) {
+	      const char *env = getenv("CHIPMUNK_DEBUG_ESC");
+	      debug_esc = (env && *env && (*env == '1' || *env == 'y' || *env == 'Y')) ? 1 : 0;
+	    }
+	    dbglog("[chipmunk] ESC detected at X layer (m_inkeyn) -> ^C");
+	    return((uchar) '\003');
+	  }
 	  return(buf[0]);
 	}
-	/* If XLookupString returns 0, try XLookupKeysym as fallback for arrow keys */
+	/* If XLookupString returns 0, try XLookupKeysym as fallback for arrow keys and ESC */
 	sym = XLookupKeysym((XKeyEvent *)&event, 0);
+	/* Check for Escape key */
+	if (sym == XK_Escape) {
+	  if (debug_esc == -1) {
+	    const char *env = getenv("CHIPMUNK_DEBUG_ESC");
+	    debug_esc = (env && *env && (*env == '1' || *env == 'y' || *env == 'Y')) ? 1 : 0;
+	  }
+	  dbglog("[chipmunk] ESC keysym detected (m_inkeyn fallback) -> ^C");
+	  XPutBackEvent(m_display, &event);
+	  return((uchar) '\003');
+	}
 	if (sym == XK_Up || sym == XK_KP_Up) {
 	  XPutBackEvent(m_display, &event);
 	  return((uchar) '\037');  /* Up arrow -> scroll up */
@@ -5137,6 +5232,15 @@ uchar m_inkeyn()
 	} else if (sym == XK_Right || sym == XK_KP_Right) {
 	  XPutBackEvent(m_display, &event);
 	  return((uchar) '\034');  /* Right arrow -> scroll right */
+	} else if ((event.xkey.state & ControlMask) &&
+                   (sym == XK_c || sym == XK_C)) {
+	  XPutBackEvent(m_display, &event);
+	  if (debug_esc == -1) {
+	    const char *env = getenv("CHIPMUNK_DEBUG_ESC");
+	    debug_esc = (env && *env && (*env == '1' || *env == 'y' || *env == 'Y')) ? 1 : 0;
+	  }
+	  dbglog("[chipmunk] Ctrl-C detected (m_inkeyn) -> ^C");
+	  return((uchar) '\003');
 	}
 	/* If neither worked, put event back and return 0 (no key available) */
 	XPutBackEvent(m_display, &event);
@@ -5166,6 +5270,32 @@ uchar m_testkey()
   XEvent event;
   char buf[10];
   KeySym sym;
+  static int debug_esc = -1;  /* -1: uninit, 0: off, 1: on */
+  static int use_file = -1;
+  static char dbgpath[256];
+  auto void dbglog(const char *msg) {
+    if (debug_esc <= 0)
+      return;
+    if (use_file == -1) {
+      const char *p = getenv("CHIPMUNK_DEBUG_ESC_FILE");
+      if (p && *p) {
+        strncpy(dbgpath, p, sizeof(dbgpath) - 1);
+        dbgpath[sizeof(dbgpath) - 1] = '\0';
+        use_file = 1;
+      } else {
+        strcpy(dbgpath, "/tmp/chipmunk-esc.log");
+        use_file = 1;
+      }
+    }
+    FILE *f = fopen(dbgpath, "a");
+    if (f) {
+      fputs(msg, f);
+      fputc('\n', f);
+      fclose(f);
+    } else {
+      fprintf(stderr, "%s\n", msg);
+    }
+  }
 
   Kfprintf(stderr, "m_testkey()\n");
 
@@ -5189,10 +5319,28 @@ uchar m_testkey()
 	/* Regular character */
 	Xfprintf(stderr, "XPutBackEvent()  (m_testkey() key event)\n");
 	XPutBackEvent(m_display, &event);
+	if ((unsigned char)buf[0] == 27) {
+	  if (debug_esc == -1) {
+	    const char *env = getenv("CHIPMUNK_DEBUG_ESC");
+	    debug_esc = (env && *env && (*env == '1' || *env == 'y' || *env == 'Y')) ? 1 : 0;
+	  }
+	  dbglog("[chipmunk] ESC detected at X layer (m_testkey) -> ^C");
+	  return((uchar) '\003');
+	}
 	return(buf[0]);
       }
-      /* If XLookupString returns 0, try XLookupKeysym as fallback for arrow keys */
+      /* If XLookupString returns 0, try XLookupKeysym as fallback for arrow keys and ESC */
       sym = XLookupKeysym((XKeyEvent *)&event, 0);
+      /* Check for Escape key */
+      if (sym == XK_Escape) {
+	if (debug_esc == -1) {
+	  const char *env = getenv("CHIPMUNK_DEBUG_ESC");
+	  debug_esc = (env && *env && (*env == '1' || *env == 'y' || *env == 'Y')) ? 1 : 0;
+	}
+	dbglog("[chipmunk] ESC keysym detected (m_testkey fallback) -> ^C");
+	XPutBackEvent(m_display, &event);
+	return((uchar) '\003');
+      }
       if (sym == XK_Up || sym == XK_KP_Up) {
 	XPutBackEvent(m_display, &event);
 	return((uchar) '\037');  /* Up arrow -> scroll up */
@@ -5205,6 +5353,15 @@ uchar m_testkey()
       } else if (sym == XK_Right || sym == XK_KP_Right) {
 	XPutBackEvent(m_display, &event);
 	return((uchar) '\034');  /* Right arrow -> scroll right */
+      } else if ((event.xkey.state & ControlMask) &&
+                 (sym == XK_c || sym == XK_C)) {
+	XPutBackEvent(m_display, &event);
+	if (debug_esc == -1) {
+	  const char *env = getenv("CHIPMUNK_DEBUG_ESC");
+	  debug_esc = (env && *env && (*env == '1' || *env == 'y' || *env == 'Y')) ? 1 : 0;
+	}
+	dbglog("[chipmunk] Ctrl-C detected (m_testkey) -> ^C");
+	return((uchar) '\003');
       }
     } else if ((event.type == Expose) &&
 	       (event.xexpose.window == m_window) &&

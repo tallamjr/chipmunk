@@ -13,7 +13,7 @@
 ### Mode-Based Editing
 - **Keyboard** enters modes (e.g., `d` for delete, `m` for move, `c` for configure)
 - **Mouse** performs actions within the active mode
-- **Ctrl-C** exits any mode and returns to normal
+- **Esc** or **Ctrl-C** exits any mode and returns to normal
 
 ### Mouse Actions
 - **Tap** (quick press/release): Rotate gates, configure gates, draw wires
@@ -54,7 +54,7 @@
 ### Getting Help
 - **`?`**: Open this help (or press HELP button)
 - **`q`**: Exit help mode
-- **Ctrl-C**: Cancel current mode
+- **Esc** or **Ctrl-C**: Cancel current mode
 
 ## Common Workflows
 
@@ -117,7 +117,7 @@ Based on `log/lib/cheat.text` - Handy Tips for Using AnaLOG:
 | # | Tip |
 |---|-----|
 | 0 | Type "analog" to run the AnaLOG simulator |
-| 1 | Press the Control-C key to get out of any mode |
+| 1 | Press Esc or Control-C to get out of any mode |
 | 2 | Press the "q" key to get out of the Help command |
 | 3 | Press the space bar to refresh the screen |
 | 4 | PRESS and DRAG with the left button to move things |

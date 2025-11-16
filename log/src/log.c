@@ -3093,6 +3093,31 @@ Static Char testkey2()
 Static Char inkey2()
 {
   Char ch;
+  static int debug_esc = -1;  /* -1: uninit, 0: off, 1: on */
+  static int use_file = -1;
+  static char dbgpath[256];
+  auto void dbglog(const char *msg, int raw, int mapped) {
+    if (debug_esc <= 0)
+      return;
+    if (use_file == -1) {
+      const char *p = getenv("CHIPMUNK_DEBUG_ESC_FILE");
+      if (p && *p) {
+        strncpy(dbgpath, p, sizeof(dbgpath) - 1);
+        dbgpath[sizeof(dbgpath) - 1] = '\0';
+        use_file = 1;
+      } else {
+        strcpy(dbgpath, "/tmp/chipmunk-esc.log");
+        use_file = 1;
+      }
+    }
+    FILE *f = fopen(dbgpath, "a");
+    if (f) {
+      fprintf(f, "%s (raw=%d mapped=%d)\n", msg, raw, mapped);
+      fclose(f);
+    } else {
+      fprintf(stderr, "%s (raw=%d mapped=%d)\n", msg, raw, mapped);
+    }
+  }
 
   do {
   } while (!pollkbd2());
@@ -3102,6 +3127,18 @@ Static Char inkey2()
   } else
     realkey = nk_getkey();
   ch = realkey;
+  /* Normalize Escape (ASCII 27) to EXEC (^C, ASCII 3) for mode cancel */
+  if ((unsigned char)ch == 27) {
+    ch = '\003';
+  }
+  /* Optional debug: print when ESC/^C is detected (controlled by env) */
+  if (debug_esc == -1) {
+    const char *env = getenv("CHIPMUNK_DEBUG_ESC");
+    debug_esc = (env && *env && (*env == '1' || *env == 'y' || *env == 'Y')) ? 1 : 0;
+  }
+  if (debug_esc && ((unsigned char)realkey == 27 || ch == '\003')) {
+    dbglog("[chipmunk] ESC/^C detected in inkey2", (int)(unsigned char)realkey, (int)(unsigned char)ch);
+  }
   if ((ch & 255) >= 168 && (ch & 255) <= 239 && nk_capslock) {
 /* p2c: log.text, line 2967: Note: Character >= 128 encountered [281] */
 /* p2c: log.text, line 2967: Note: Character >= 128 encountered [281] */
@@ -3115,6 +3152,19 @@ Static Char inkey2()
   }
   gg.fastspeed = gg.fastmin;
   return ch;
+}
+
+/* Lightweight ESC/^C debug toggle */
+static int log_debug_esc_enabled()
+{
+  static int inited = 0;
+  static int enabled = 0;
+  if (!inited) {
+    const char *env = getenv("CHIPMUNK_DEBUG_ESC");
+    enabled = (env && *env && (*env == '1' || *env == 'y' || *env == 'Y')) ? 1 : 0;
+    inited = 1;
+  }
+  return enabled;
 }
 
 
@@ -7724,6 +7774,9 @@ Char *name_;
   strcpy(name, name_);
   remcursor();
   commandfound = true;
+  if (log_debug_esc_enabled() && strcmp(name_, "ABORT") == 0) {
+    fprintf(stderr, "[chipmunk] ^C handled via assertfunc(\"ABORT\")\n");
+  }
   while (*name == ':')
     strcpy_overlap(name, name + 1);
   getword(name, cmd);
@@ -7784,6 +7837,15 @@ Static Void trykbd()
   switch (ch) {
 
   case '\003':
+    if (log_debug_esc_enabled()) {
+      fprintf(stderr, "[chipmunk] ^C in trykbd()\n");
+    }
+    assertfunc("ABORT");
+    break;
+  case '\033':   /* ESC fallback if mapping missed */
+    if (log_debug_esc_enabled()) {
+      fprintf(stderr, "[chipmunk] ESC (raw) in trykbd() -> ABORT\n");
+    }
     assertfunc("ABORT");
     break;
 
@@ -19960,6 +20022,9 @@ Char *name_;
       case ' ':
       case '\003':
       case '\015':
+	if (log_debug_esc_enabled() && ch == '\003') {
+	  fprintf(stderr, "[chipmunk] ^C in status menu loop\n");
+	}
 	exitflag = true;
 	break;
       }
@@ -21909,6 +21974,8 @@ Static Void initialize()
   WITH->matrix[46 - nk_keylow][-nk_keymodlow].c = 7;
   WITH->matrix[46 - nk_keylow][-nk_keymodlow].k = nk_kknormal;
   XRebindKeysym(m_display, XStringToKeysym("BackSpace"), NULL, 0, (unsigned char * )"\007", 1);
+  /* Also treat Escape like EXEC (^C) so ESC exits modes just like Ctrl-C */
+  XRebindKeysym(m_display, XStringToKeysym("Escape"), NULL, 0, (unsigned char * )"\003", 1);
   gg.refrflag = true;
   gg.markers = false;
   gg.numpages = 1;
@@ -22064,7 +22131,7 @@ Static Void shownews()
 static void crash_handler(int sig, siginfo_t *info, void *context)
 {
   FILE *crash_log;
-  char crash_log_path[512];
+  char crash_log_path[1024];
   char *loglib_env;
   time_t now;
   struct tm *tm_info;
@@ -22146,7 +22213,7 @@ static void crash_handler(int sig, siginfo_t *info, void *context)
     int size;
     char **strings;
     int i;
-    char addr2line_cmd[512];
+    char addr2line_cmd[1024];
     FILE *addr2line_pipe;
     char line_buf[512];
     char exe_path[512];
@@ -22235,7 +22302,7 @@ static void crash_handler(int sig, siginfo_t *info, void *context)
       int size;
       char **strings;
       int i;
-      char addr2line_cmd[512];
+      char addr2line_cmd[1024];
       FILE *addr2line_pipe;
       char line_buf[512];
       char exe_path[512];
@@ -22506,6 +22573,21 @@ int main(int argc, Char * argv[])
 		  }
 		}
 	      } else {
+		/* Wire-drawing in progress (ospointflag true) */
+		/* Allow ESC/^C to cancel wire drawing immediately */
+		if (pollkbd2()) {
+		  Char ktest = testkey2();
+		  if (ktest == '\003' || (unsigned char)ktest == 27) {
+		    if (log_debug_esc_enabled()) {
+		      fprintf(stderr, "[chipmunk] ^C/ESC during wire-draw -> cancel\n");
+		    }
+		    gg.startpoint = false;
+		    /* consume key */
+		    (void)inkey2();
+		    pen();   /* restore cursor */
+		    goto _after_wire_draw;
+		  }
+		}
 		if (hvline(gg.oldx, gg.oldy, &gg.posx, &gg.posy)) {
 		  if (gg.posx != gg.oldx)
 		    addhwire(gg.posx, gg.oldx, gg.posy, curwcolor);
@@ -22513,6 +22595,7 @@ int main(int argc, Char * argv[])
 		    addvwire(gg.posx, gg.oldy, gg.posy, curwcolor);
 		}
 	      }
+_after_wire_draw:
 	      if (gg.invisible || gg.probemode || gg.showconflicts)
 		gg.startpoint = false;
 	    }
