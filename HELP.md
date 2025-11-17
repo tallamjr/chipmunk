@@ -33,9 +33,9 @@
 
 ### Navigation
 - **Space**: Refresh screen
-- **`<`** / **`>`**: Zoom out / Zoom in
+- **`<`** / **`>`**: Zoom out / Zoom in (7 levels: 1x, 2x, 3x, 5x, 8x, 12x, 20x)
 - **Arrow keys**: Scroll the schematic
-- **`h`**: Home (return to origin and reset zoom to default)
+- **`h`**: Home (return to origin and reset zoom to default 5x)
 - **`F`**: Fit - automatically zoom and center all objects to fill the window
 - **`G`**: Toggle grid display
 - **`A`**: Auto-window mode (toggles automatic window raising for small screens; does NOT fit circuit to screen)

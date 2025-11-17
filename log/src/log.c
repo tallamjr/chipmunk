@@ -6886,7 +6886,7 @@ Static Void setscale(short s)
 
 {
   zoom = s;
-  gg.scale = zoomscales[s + 2];
+  gg.scale = zoomscales[s + 3];
   gg.hscale = gg.scale / 2;
 }
 
@@ -7416,7 +7416,7 @@ short z;
 {
   short s0, i, FORLIM;
 
-  if (-2 > z || z > 2 || z == zoom) {
+  if (-3 > z || z > 3 || z == zoom) {
     clearfunc();
     return;
   }
@@ -12262,20 +12262,24 @@ Static Void fitzoom()
   new_zoom = (zoom_x < zoom_y) ? zoom_x : zoom_y;
   
   /* Pick the closest available zoom level that will fit everything */
-  /* zoomscales array: {2, 3, 5, 8, 12} for zoom indices -2, -1, 0, 1, 2 */
+  /* zoomscales array: {1, 2, 3, 5, 8, 12, 20} for zoom indices -3, -2, -1, 0, 1, 2, 3 */
   /* Larger scale = more zoomed in. Pick the largest scale that is <= calculated zoom */
-  /* If calculated zoom is less than 2 (minimum), use 2 */
-  /* If calculated zoom is greater than 12 (maximum), use 12 */
-  if (new_zoom >= 12)
+  /* If calculated zoom is less than 1 (minimum), use 1 */
+  /* If calculated zoom is greater than 20 (maximum), use 20 */
+  if (new_zoom >= 20)
+    new_zoom_level = 3;   /* scale 20 */
+  else if (new_zoom >= 12)
     new_zoom_level = 2;   /* scale 12 */
   else if (new_zoom >= 8)
     new_zoom_level = 1;   /* scale 8 */
   else if (new_zoom >= 5)
-    new_zoom_level = 0;   /* scale 5 */
+    new_zoom_level = 0;   /* scale 5 (default) */
   else if (new_zoom >= 3)
     new_zoom_level = -1;  /* scale 3 */
+  else if (new_zoom >= 2)
+    new_zoom_level = -2;  /* scale 2 */
   else
-    new_zoom_level = -2;  /* scale 2 (most zoomed out) */
+    new_zoom_level = -3;  /* scale 1 (most zoomed out) */
   
   /* Apply the zoom level */
   setscale(new_zoom_level);
