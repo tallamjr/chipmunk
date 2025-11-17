@@ -138,8 +138,11 @@ OTHERLIBS= -lm
 ##
 ## For AmigaOS, ADE (Amiga Development Enviroment) with gcc is recommended.
 ##
+## Note: -Wno-format-overflow and -Wno-stringop-overflow suppress warnings from
+## legacy 1980s code. These warnings are expected and would require extensive
+## code refactoring to fix, which is not practical for this historical codebase.
   
-CHIPMUNKCC = gcc -g
+CHIPMUNKCC = gcc -g -Wno-format-overflow -Wno-stringop-overflow
 
 CC = $(CHIPMUNKCC) 
 
@@ -238,7 +241,7 @@ makeana:
 LOGOBJ = log.o $(TOOLOBJ) logstuff.o logdef.o
 
 log: $(LOGOBJ) tooldir.o $(LIBP2C) makeana
-	$(CC) $(CFLAGS) tooldir.o $(LOGOBJ) $(LIBP2C) $(LIBX11)  \
+	$(CC) $(CFLAGS) -rdynamic tooldir.o $(LOGOBJ) $(LIBP2C) $(LIBX11)  \
 	$(OTHERLIBS) -o log
 
 ## The following permits you to link properly with AmigaOS and 
@@ -343,10 +346,3 @@ tardist:
 	gzip log.tar
 
 create: dist tardist 
-
-
-
-
-
-
-

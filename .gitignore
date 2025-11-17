@@ -8,6 +8,8 @@ core
 
 # Generated files
 log/src/ana/logdef.h
+log/src/tooldir.c
+log/src/simdir.c
 
 # Editor backup files
 *~
@@ -38,3 +40,9 @@ dist/
 *.sublime-workspace
 
 chipmunk-*.tar.gz
+chipmunk-crash.log
+
+# Test files
+test_crash_handler
+/tmp/chipmunk-crash-test.log
+.requirements_checked

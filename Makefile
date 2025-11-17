@@ -4,7 +4,10 @@
 # Version: 6.0.0
 # Base Chipmunk Version: 5.66
 
-.PHONY: all build clean install default help check
+.PHONY: all build clean install default help check bin/diglog
+
+# Sentinel file to track successful requirements check
+REQUIREMENTS_CHECKED := .requirements_checked
 
 # Default target
 default: all
@@ -12,19 +15,22 @@ default: all
 # Build everything (psys must be built before log)
 all: build
 
-build: psys/src/libp2c.a bin/diglog
+build: $(REQUIREMENTS_CHECKED) psys/src/libp2c.a bin/diglog
 	@echo ""
 	@echo "Build complete! You can now run: ./bin/analog"
+	@./scripts/path_setup.sh || true
 
 # Build psys libraries (required before building log)
 psys/src/libp2c.a:
 	@echo "Building psys libraries..."
-	$(MAKE) -C psys/src install
+	@echo "Note: Format-overflow warnings from legacy 1980s code are expected and suppressed."
+	@$(MAKE) -C psys/src install 2>&1 | grep -v "gets.*function is dangerous" || true
 
 # Build log tools (depends on psys)
 bin/diglog: psys/src/libp2c.a
 	@echo "Building log tools..."
-	$(MAKE) -C log/src install
+	@echo "Note: Format-overflow warnings from legacy 1980s code are expected and suppressed."
+	@$(MAKE) -C log/src install 2>&1 | grep -v "gets.*function is dangerous" || true
 
 # Clean all build artifacts
 clean:
@@ -32,10 +38,26 @@ clean:
 	$(MAKE) -C psys/src clean
 	@echo "Cleaning log..."
 	$(MAKE) -C log/src clean
+	@echo "Removing requirements check sentinel..."
+	@rm -f $(REQUIREMENTS_CHECKED)
 	@echo "Clean complete!"
 
 # Install everything (same as build)
 install: build
+
+# Run check_requirements.sh and create sentinel file on success
+$(REQUIREMENTS_CHECKED):
+	@echo "Checking requirements..."
+	@if ./check_requirements.sh; then \
+		touch $(REQUIREMENTS_CHECKED); \
+		echo ""; \
+		echo "Requirements check passed. Proceeding with build..."; \
+		echo ""; \
+	else \
+		echo ""; \
+		echo "Requirements check failed. Please fix the issues above and try again."; \
+		exit 1; \
+	fi
 
 # Check system requirements (compiler, X11, fonts, etc.)
 check:
@@ -142,4 +164,3 @@ help:
 	@echo "  make help     - Show this help message"
 	@echo ""
 	@echo "After building, run: ./bin/analog"
-

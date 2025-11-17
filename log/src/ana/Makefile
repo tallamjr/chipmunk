@@ -60,10 +60,13 @@ XINCLUDEDIR = .
 ##
 ## For AmigaOS, ADE (Amiga Development Enviroment) with gcc is recommended.
 ##
+## Note: -Wno-format-overflow and -Wno-stringop-overflow suppress warnings from
+## legacy 1980s code. These warnings are expected and would require extensive
+## code refactoring to fix, which is not practical for this historical codebase.
 ##
   
 
-CHIPMUNKCC = gcc -g
+CHIPMUNKCC = gcc -g -Wno-format-overflow -Wno-stringop-overflow
 
 
 CC = $(CHIPMUNKCC) 
@@ -130,14 +133,3 @@ grab: logdef.h
 
 logdef.h: ../logdef.h
 	cp ../logdef.h .
-
-
-
-
-
-
-
-
-
-
-
