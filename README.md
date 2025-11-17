@@ -48,7 +48,7 @@ Pre-built binaries are available in [GitHub Releases](https://github.com/sensors
 
 ## Version
 
-- **This Repository Version**: 6.0.0
+- **This Repository Version**: 6.1.0
 - **Base Chipmunk/LOG Version**: 5.66
 - **SPICE Converter Version**: 1.0 Beta
 
