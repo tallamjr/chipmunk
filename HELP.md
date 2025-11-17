@@ -13,7 +13,7 @@
 ## Core Interaction Model
 
 ### Mode-Based Editing
-- **Keyboard** enters modes (e.g., `d` for delete, `m` for move, `c` for configure)
+- **Keyboard** enters modes (e.g., `d` for delete, `m` for move, `c` for configure, '/' for copy)
 - **Mouse** performs actions within the active mode
 - **Esc** or **Ctrl-C** exits any mode and returns to normal
 
@@ -21,7 +21,7 @@
 - **Tap** (quick press/release): Rotate gates, configure gates, draw wires
 - **Drag** (press + move + release): Move objects, select areas
 - **Right button**: Cancel wire-drawing and other simple modes
-- **Drag off screen edge**: Delete objects (in delete mode)
+- **Drag off screen edge**: Delete objects (but only in delete mode)
 
 ### Grid and Connections
 - All objects snap to a **grid** for precise alignment
@@ -64,8 +64,9 @@
 ### Drawing Wires
 1. Tap to start a wire segment
 2. Tap again to end the segment and start a new one
-3. Press right button, Esc, or Ctrl-C to cancel wire-drawing
+3. Press right button to cancel wire-drawing
 4. Note: First click after window focus is ignored to prevent accidental wire-drawing
+5. Note: Esc and Ctrl-C work to exit other modes, but right-click is the intended way to cancel wire-drawing
 
 ### Moving an Object
 1. Press `m` (move mode)
