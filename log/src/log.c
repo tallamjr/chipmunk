@@ -12243,8 +12243,10 @@ Static Void fitzoom()
   center_x = (x1 + x2) / 2;
   center_y = (y1 + y2) / 2;
   
-  /* Calculate zoom levels that would fit width and height */
-  /* zoom_x and zoom_y are the scale factors needed */
+  /* Calculate zoom scale that would fit width and height */
+  /* In Chipmunk: larger scale = more zoomed in (objects larger) */
+  /* screen_coord = circuit_coord * scale / log_scale0 */
+  /* So: scale = (screen_pixels * log_scale0) / circuit_units */
   /* Using explicit checks to avoid any potential division issues */
   if (obj_width > 0)
     zoom_x = (view_width * log_scale0) / obj_width;
@@ -12256,22 +12258,24 @@ Static Void fitzoom()
   else
     zoom_y = log_scale0;
   
-  /* Use the smaller zoom to ensure everything fits */
+  /* Use the smaller zoom scale to ensure everything fits */
   new_zoom = (zoom_x < zoom_y) ? zoom_x : zoom_y;
   
-  /* Clamp zoom to valid range (zoom index -2 to 2) */
-  /* zoomscales array has 5 elements: {2, 3, 5, 8, 12} for indices 0-4 */
-  /* zoom index -2 to 2 maps to array indices 0 to 4 via zoomscales[zoom+2] */
-  if (new_zoom <= 2)
-    new_zoom_level = -2;  /* zoomscales[0] = 2 */
-  else if (new_zoom <= 3)
-    new_zoom_level = -1;  /* zoomscales[1] = 3 */
-  else if (new_zoom <= 5)
-    new_zoom_level = 0;   /* zoomscales[2] = 5 */
-  else if (new_zoom <= 8)
-    new_zoom_level = 1;   /* zoomscales[3] = 8 */
+  /* Pick the closest available zoom level that will fit everything */
+  /* zoomscales array: {2, 3, 5, 8, 12} for zoom indices -2, -1, 0, 1, 2 */
+  /* Larger scale = more zoomed in. Pick the largest scale that is <= calculated zoom */
+  /* If calculated zoom is less than 2 (minimum), use 2 */
+  /* If calculated zoom is greater than 12 (maximum), use 12 */
+  if (new_zoom >= 12)
+    new_zoom_level = 2;   /* scale 12 */
+  else if (new_zoom >= 8)
+    new_zoom_level = 1;   /* scale 8 */
+  else if (new_zoom >= 5)
+    new_zoom_level = 0;   /* scale 5 */
+  else if (new_zoom >= 3)
+    new_zoom_level = -1;  /* scale 3 */
   else
-    new_zoom_level = 2;   /* zoomscales[4] = 12 */
+    new_zoom_level = -2;  /* scale 2 (most zoomed out) */
   
   /* Apply the zoom level */
   setscale(new_zoom_level);
@@ -12283,9 +12287,11 @@ Static Void fitzoom()
   }
   
   /* Center the view on the objects */
-  /* xoff/yoff are in screen pixels, representing offset from origin */
-  gg.xoff = center_x * gg.scale / log_scale0 - across / 2;
-  gg.yoff = center_y * gg.scale / log_scale0 - baseline / 2;
+  /* Viewport shows circuit coords: x1 = xoff/scale, x2 = (xoff+across)/scale */
+  /* To center on center_x: center_x = (xoff + across/2) / scale */
+  /* So: xoff = center_x * scale - across/2 */
+  gg.xoff = center_x * gg.scale - across / 2;
+  gg.yoff = center_y * gg.scale - baseline / 2;
   
   /* Reset scroll offsets */
   xoff0 = 0;
@@ -22361,26 +22367,41 @@ static void crash_handler(int sig, siginfo_t *info, void *context)
         fprintf(stderr, "  [%2d] %s", i, strings[i]);
         
         /* Try to get source file and line number using addr2line */
+        /* Extract offset from strings[i] which looks like: "path(+0xOFFSET) [0xADDR]" */
         if (exe_path[0] != '\0') {
-          snprintf(addr2line_cmd, sizeof(addr2line_cmd), 
-                   "addr2line -e %s -f -C -p %p 2>/dev/null", 
-                   exe_path, array[i]);
-          addr2line_pipe = popen(addr2line_cmd, "r");
-          if (addr2line_pipe != NULL) {
-            if (fgets(line_buf, sizeof(line_buf), addr2line_pipe) != NULL) {
-              /* Remove trailing newline */
-              {
-                int len = strlen(line_buf);
-                if (len > 0 && line_buf[len - 1] == '\n') {
-                  line_buf[len - 1] = '\0';
+          char *offset_start = strstr(strings[i], "(+0x");
+          if (offset_start != NULL) {
+            offset_start += 1; /* skip the '(' */
+            char *offset_end = strchr(offset_start, ')');
+            if (offset_end != NULL) {
+              char offset_str[32];
+              int offset_len = offset_end - offset_start;
+              if (offset_len < sizeof(offset_str)) {
+                strncpy(offset_str, offset_start, offset_len);
+                offset_str[offset_len] = '\0';
+                
+                snprintf(addr2line_cmd, sizeof(addr2line_cmd), 
+                         "addr2line -e %s -f -C -p %s 2>/dev/null", 
+                         exe_path, offset_str);
+                addr2line_pipe = popen(addr2line_cmd, "r");
+                if (addr2line_pipe != NULL) {
+                  if (fgets(line_buf, sizeof(line_buf), addr2line_pipe) != NULL) {
+                    /* Remove trailing newline */
+                    {
+                      int len = strlen(line_buf);
+                      if (len > 0 && line_buf[len - 1] == '\n') {
+                        line_buf[len - 1] = '\0';
+                      }
+                    }
+                    /* Only show if addr2line found a valid location (not "??:0") */
+                    if (strstr(line_buf, "??:0") == NULL && strstr(line_buf, "?? ??:0") == NULL) {
+                      fprintf(stderr, "\n      -> %s", line_buf);
+                    }
+                  }
+                  pclose(addr2line_pipe);
                 }
               }
-              /* Only show if addr2line found a valid location (not "??:0") */
-              if (strstr(line_buf, "??:0") == NULL && strstr(line_buf, "?? ??:0") == NULL) {
-                fprintf(stderr, "\n      -> %s", line_buf);
-              }
             }
-            pclose(addr2line_pipe);
           }
         }
         fprintf(stderr, "\n");
@@ -22450,26 +22471,41 @@ static void crash_handler(int sig, siginfo_t *info, void *context)
           fprintf(crash_log, "  [%2d] %s", i, strings[i]);
           
           /* Try to get source file and line number using addr2line */
+          /* Extract offset from strings[i] which looks like: "path(+0xOFFSET) [0xADDR]" */
           if (exe_path[0] != '\0') {
-            snprintf(addr2line_cmd, sizeof(addr2line_cmd), 
-                     "addr2line -e %s -f -C -p %p 2>/dev/null", 
-                     exe_path, array[i]);
-            addr2line_pipe = popen(addr2line_cmd, "r");
-            if (addr2line_pipe != NULL) {
-              if (fgets(line_buf, sizeof(line_buf), addr2line_pipe) != NULL) {
-                /* Remove trailing newline */
-                {
-                  int len = strlen(line_buf);
-                  if (len > 0 && line_buf[len - 1] == '\n') {
-                    line_buf[len - 1] = '\0';
+            char *offset_start = strstr(strings[i], "(+0x");
+            if (offset_start != NULL) {
+              offset_start += 1; /* skip the '(' */
+              char *offset_end = strchr(offset_start, ')');
+              if (offset_end != NULL) {
+                char offset_str[32];
+                int offset_len = offset_end - offset_start;
+                if (offset_len < sizeof(offset_str)) {
+                  strncpy(offset_str, offset_start, offset_len);
+                  offset_str[offset_len] = '\0';
+                  
+                  snprintf(addr2line_cmd, sizeof(addr2line_cmd), 
+                           "addr2line -e %s -f -C -p %s 2>/dev/null", 
+                           exe_path, offset_str);
+                  addr2line_pipe = popen(addr2line_cmd, "r");
+                  if (addr2line_pipe != NULL) {
+                    if (fgets(line_buf, sizeof(line_buf), addr2line_pipe) != NULL) {
+                      /* Remove trailing newline */
+                      {
+                        int len = strlen(line_buf);
+                        if (len > 0 && line_buf[len - 1] == '\n') {
+                          line_buf[len - 1] = '\0';
+                        }
+                      }
+                      /* Only show if addr2line found a valid location (not "??:0") */
+                      if (strstr(line_buf, "??:0") == NULL && strstr(line_buf, "?? ??:0") == NULL) {
+                        fprintf(crash_log, "\n      -> %s", line_buf);
+                      }
+                    }
+                    pclose(addr2line_pipe);
                   }
                 }
-                /* Only show if addr2line found a valid location (not "??:0") */
-                if (strstr(line_buf, "??:0") == NULL && strstr(line_buf, "?? ??:0") == NULL) {
-                  fprintf(crash_log, "\n      -> %s", line_buf);
-                }
               }
-              pclose(addr2line_pipe);
             }
           }
           fprintf(crash_log, "\n");
