@@ -6,7 +6,7 @@
 
 #  "AnaLOG", the analog simulator for LOG, 5.66
 #  Copyright (C) 1985, 1990 John Lazzaro.
-#  Author's address: lazzaro@cs.berkeley.edu; 
+#  Author's address: lazzaro@cs.berkeley.edu;
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -136,7 +136,7 @@ endif
 ##
 ## on Sun Solaris 2.X, -lsocket -lnsl must be added to OTHERLIBS
 
-OTHERLIBS= -lm 
+OTHERLIBS= -lm
 
 
 ##
@@ -157,14 +157,13 @@ OTHERLIBS= -lm
 ## code refactoring to fix, which is not practical for this historical codebase.
 ## These flags are GCC-specific and not recognized by Apple Clang.
 
-ifeq ($(UNAME_S),Darwin)
-  # macOS: Use gcc-15 explicitly (Make doesn't honor shell aliases)
-  CHIPMUNKCC = gcc-15 -g -Wno-format-overflow -Wno-stringop-overflow
-else
-  # Linux: Use system GCC with warning suppression
-  CHIPMUNKCC = gcc -g -Wno-format-overflow -Wno-stringop-overflow
-endif
+# Use GCC with warning suppression
+# Note: CC comes from environment (e.g. on macOS, CC=/opt/homebrew/bin/gcc-<version>)
+# Use := for immediate expansion to capture the environment CC before we override it
+BASE_CC := $(CC)
+CHIPMUNKCC = $(BASE_CC) -g -Wno-format-overflow -Wno-stringop-overflow
 
+# Use CHIPMUNKCC for compilation (inherits CC from environment)
 CC = $(CHIPMUNKCC)
 
 ##
@@ -240,7 +239,7 @@ TOOLOBJ = $(SIMOBJ) lplot.o logspc.o logntk.o
 ##  -(cd $(BINDIR); ln -s diglog analog)
 ##
 ##  creates a symbolic link for analog. Symbolic links save lots
-##  of disk space, but may cause compatibility issues on some 
+##  of disk space, but may cause compatibility issues on some
 ##  older operating systems -- if problems arise, use a hard link.
 ##
 
@@ -271,9 +270,9 @@ log: $(LOGOBJ) tooldir.o $(LIBP2C) makeana
 	$(CC) $(CFLAGS) -rdynamic tooldir.o $(LOGOBJ) $(LIBP2C) $(LIBX11)  \
 	$(OTHERLIBS) -o log
 
-## The following permits you to link properly with AmigaOS and 
+## The following permits you to link properly with AmigaOS and
 ## X shared libraries used in ADE
- 
+
 ##log: $(LOGOBJ) tooldir.o $(LIBP2C) makeana
 ##	prelink $(LIBX11)
 ##	$(CC) -Tshared.x -Wa,-s $(CFLAGS) tooldir.o $(LOGOBJ) $(LIBP2C) $(LIBX11)  \
@@ -281,7 +280,7 @@ log: $(LOGOBJ) tooldir.o $(LIBP2C) makeana
 ##	postlink log
 ##	rm shared.x xlibs.c xlibs.o
 
- 
+
 # The following, if it works on your system, will enable the "linklog"
 # script to work.
 
@@ -298,11 +297,11 @@ LOGEDOBJ = loged.o simdir.o $(SIMOBJ) logstuff.o
 loged: $(LOGEDOBJ) simdir.o $(LIBP2C)
 	$(CC) $(CFLAGS) $(LOGEDOBJ) $(LIBP2C) $(LIBX11) $(OTHERLIBS) -o loged
 
- 
- 
-# The following permits you to link properly with AmigaOS and 
+
+
+# The following permits you to link properly with AmigaOS and
 # X shared libraries used in ADE
- 
+
 ##loged: $(LOGEDOBJ) simdir.o $(LIBP2C)
 ##	prelink $(LIBX11)
 ##	$(CC) -Tshared.x -Wa,-s $(CFLAGS) $(LOGEDOBJ) $(LIBP2C) $(LIBX11) $(OTHERLIBS) -o loged
@@ -332,7 +331,7 @@ simdir.c: $(SIMOBJ)
 	chmod +x munch
 	./munch 'Log_[0-9]*_proc' $(SIMOBJ) > simdir.c
 
- 
+
 ## The following part of the Makefile is for making a tar file of the
 ## original parts of the log distribution. Most users have no need for it.
 
@@ -372,4 +371,4 @@ tardist:
 	-rm -f log.tar.gz
 	gzip log.tar
 
-create: dist tardist 
+create: dist tardist

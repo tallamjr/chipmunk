@@ -105,8 +105,11 @@ endif
 ## legacy 1980s code. These warnings are expected and would require extensive
 ## code refactoring to fix, which is not practical for this historical codebase.
 
-# Use system GCC with warning suppression
-CHIPMUNKCC = $(CC) -g -Wno-format-overflow -Wno-stringop-overflow
+# Use GCC with warning suppression
+# Note: CC comes from environment (e.g., CC=/opt/homebrew/bin/gcc-15)
+# Use := for immediate expansion to capture the environment CC before we override it
+BASE_CC := $(CC)
+CHIPMUNKCC = $(BASE_CC) -g -Wno-format-overflow -Wno-stringop-overflow
 
 OBJS = sysdevs.o \
        markrelease.o \
@@ -137,7 +140,7 @@ OBJS = sysdevs.o \
 
 LIBSTUFF = texstuff.ps untilstuff.ps plot.font
 
-
+# Use CHIPMUNKCC for compilation (inherits CC from environment)
 CC = $(CHIPMUNKCC)
 
 
