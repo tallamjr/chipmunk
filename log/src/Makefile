@@ -206,7 +206,9 @@ CC = $(CHIPMUNKCC)
 
 ifeq ($(UNAME_S),Darwin)
   # macOS: Modern macOS only supports 64-bit, using freebsd compatibility flags
-  CHIPMUNKFLAGS = -m64 -DBSD -Dlinux -Dfreebsd
+  # Note: -D__alpha__ is REQUIRED to ensure filerec union uses int[64] (256 bytes)
+  # instead of long[64] (512 bytes), matching the binary .gate file format
+  CHIPMUNKFLAGS = -m64 -DBSD -Dlinux -Dfreebsd -D__alpha__
 else
   # Linux: Default to 64-bit Linux/Alpha configuration
   CHIPMUNKFLAGS = -m64 -DBSD -Dlinux -DF_OK=0 -D__alpha__
