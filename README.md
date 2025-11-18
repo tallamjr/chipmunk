@@ -197,10 +197,20 @@ To open a lesson circuit on startup:
 ./bin/analog log/lib/lesson1.lgf
 ```
 
+To open the NFET characterization example:
+
+```bash
+./bin/analog nfet.lgf
+```
+
 **Recommendation for first-time users**: Start with `lesson1.lgf` to learn the basics of analog circuit simulation.
 
 ### Other Sample Circuits
 
+- **`nfet.lgf`**: NFET transistor characterization example
+  - Demonstrates Ids vs Vgs sweep (drain current vs gate-source voltage)
+  - Shows logarithmic plotting of current vs gate voltage in scope mode
+  - Useful for understanding MOSFET characteristics and parameter extraction
 - **`log/lib/spctest.lgf`**: SPICE test circuit
 - **`log/lib/spcfet5.lgf`**: FET5 model test circuit
 - **`log/lib/pwl-test.lgf`**: Piecewise linear source test circuit
