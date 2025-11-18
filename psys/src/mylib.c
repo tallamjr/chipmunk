@@ -40,8 +40,8 @@
  *
  * WINDOW GEOMETRY PERSISTENCE:
  * ---------------------------
- * Window size is saved to ~/.chipmunk_geometry and restored on next launch:
- * - Format: "WIDTHxHEIGHT+XPOS+YPOS" (standard X11 geometry string)
+ * Window size is saved to ~/.chipmunk and restored on next launch:
+ * - Format: "window_width=WIDTH\nwindow_height=HEIGHT" in preferences file
  * - Saved on normal exit via m_save_window_geometry()
  * - Loaded at startup in WindowInitialize()
  * - Default size: 1280x960+0+0 (if no saved geometry exists)
@@ -1024,22 +1024,35 @@ void WindowInitialize()
 
   root = DefaultRootWindow(m_display);
   
-  /* Try to load saved geometry from ~/.chipmunk_geometry */
+  /* Try to load saved geometry from ~/.chipmunk */
   home = getenv("HOME");
   if (home != NULL) {
-    snprintf(saved_geo, sizeof(saved_geo), "%s/.chipmunk_geometry", home);
+    int saved_width = 0, saved_height = 0;
+    snprintf(saved_geo, sizeof(saved_geo), "%s/.chipmunk", home);
     geo_file = fopen(saved_geo, "r");
     if (geo_file != NULL) {
       char line[256];
-      if (fgets(line, sizeof(line), geo_file) != NULL) {
+      while (fgets(line, sizeof(line), geo_file) != NULL) {
         /* Remove trailing newline */
         line[strcspn(line, "\r\n")] = '\0';
-        /* Validate it looks like a geometry string (WxH format) */
-        if (strchr(line, 'x') != NULL && strlen(line) < 64) {
-          defgeo = strdup(line);  /* Use saved geometry as default */
+        /* Skip comments and empty lines */
+        if (line[0] == '#' || line[0] == '\0')
+          continue;
+        /* Parse key=value pairs */
+        if (strncmp(line, "window_width=", 13) == 0) {
+          saved_width = atoi(line + 13);
+        } else if (strncmp(line, "window_height=", 14) == 0) {
+          saved_height = atoi(line + 14);
         }
       }
       fclose(geo_file);
+      /* If valid dimensions were found, create geometry string */
+      if (saved_width > 400 && saved_height > 300 && 
+          saved_width <= 3840 && saved_height <= 2160) {
+        static char geo_buf[64];
+        snprintf(geo_buf, sizeof(geo_buf), "%dx%d+0+0", saved_width, saved_height);
+        defgeo = geo_buf;
+      }
     }
   }
 
@@ -1664,6 +1677,17 @@ void m_init_pen(hpib_address)
 int hpib_address;
 {
   Mfprintf(stderr, "m_init_pen(%d)\n", hpib_address);
+}
+
+/* Set the window title - used to update with filename */
+void m_set_window_title(title)
+const char *title;
+{
+  if (m_display && m_window) {
+    XStoreName(m_display, m_window, title);
+    XSetIconName(m_display, m_window, title);
+    XFlush(m_display);
+  }
 }
 
 void m_version(version)
@@ -4779,8 +4803,11 @@ m_picturevar *p;
 void m_save_window_geometry()
 {
   char *home;
-  char geo_path[512];
-  FILE *geo_file;
+  char prefs_path[512];
+  char temp_path[512];
+  FILE *old_file, *new_file;
+  char line[512];
+  int found_width = 0, found_height = 0;
   
   home = getenv("HOME");
   if (home == NULL || last_window_width == 0 || last_window_height == 0)
@@ -4791,13 +4818,45 @@ void m_save_window_geometry()
       last_window_width > 3840 || last_window_height > 2160)
     return;
     
-  /* Save to ~/.chipmunk_geometry */
-  snprintf(geo_path, sizeof(geo_path), "%s/.chipmunk_geometry", home);
-  geo_file = fopen(geo_path, "w");
-  if (geo_file != NULL) {
-    fprintf(geo_file, "%dx%d+0+0\n", last_window_width, last_window_height);
-    fclose(geo_file);
+  /* Update ~/.chipmunk with new geometry while preserving other settings */
+  snprintf(prefs_path, sizeof(prefs_path), "%s/.chipmunk", home);
+  snprintf(temp_path, sizeof(temp_path), "%s/.chipmunk.tmp", home);
+  
+  new_file = fopen(temp_path, "w");
+  if (new_file == NULL)
+    return;
+  
+  /* Copy existing preferences, updating geometry lines */
+  old_file = fopen(prefs_path, "r");
+  if (old_file != NULL) {
+    while (fgets(line, sizeof(line), old_file) != NULL) {
+      if (strncmp(line, "window_width=", 13) == 0) {
+        fprintf(new_file, "window_width=%d\n", last_window_width);
+        found_width = 1;
+      } else if (strncmp(line, "window_height=", 14) == 0) {
+        fprintf(new_file, "window_height=%d\n", last_window_height);
+        found_height = 1;
+      } else {
+        fputs(line, new_file);
+      }
+    }
+    fclose(old_file);
+  } else {
+    /* No existing file, create header */
+    fprintf(new_file, "# Chipmunk preferences file\n");
+    fprintf(new_file, "# Automatically generated - do not edit manually\n\n");
   }
+  
+  /* Add geometry if not already present */
+  if (!found_width)
+    fprintf(new_file, "window_width=%d\n", last_window_width);
+  if (!found_height)
+    fprintf(new_file, "window_height=%d\n", last_window_height);
+  
+  fclose(new_file);
+  
+  /* Replace old file with new file */
+  rename(temp_path, prefs_path);
 }
 
 /* Update tracked window size - called from ConfigureNotify handlers */

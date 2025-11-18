@@ -39,7 +39,7 @@ the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. */
  * SCREEN COORDINATES:
  * ------------------
  * - Window size is defined by 'across' (width) and 'baseline' (height) in pixels
- * - Default window size: 1280x960 (can be customized via ~/.chipmunk_geometry)
+ * - Default window size: 1280x960 (can be customized via ~/.chipmunk)
  * - Screen coordinates start at (0,0) in top-left corner
  *
  * VIEWPORT TO CIRCUIT MAPPING:
@@ -840,6 +840,109 @@ Static Void fixcolormap()
 }
 
 
+
+/* Update window title with filename (without .lgf extension) */
+Static Void update_window_title_with_file(filename)
+Char *filename;
+{
+  Char title[300];
+  Char basename[256];
+  Char *last_slash, *last_dot;
+  
+  if (filename == NULL || *filename == '\0') {
+    strcpy(title, "analog");
+  } else {
+    /* Extract basename from path */
+    last_slash = strrchr(filename, '/');
+    if (last_slash != NULL)
+      strcpy(basename, last_slash + 1);
+    else
+      strcpy(basename, filename);
+    
+    /* Remove .lgf extension if present */
+    last_dot = strrchr(basename, '.');
+    if (last_dot != NULL && strcmp(last_dot, ".lgf") == 0)
+      *last_dot = '\0';
+    
+    /* Format as "analog:filename" */
+    sprintf(title, "analog:%s", basename);
+  }
+  
+  m_set_window_title(title);
+}
+
+/* Save preferences to ~/.chipmunk */
+Static Void save_chipmunk_prefs()
+{
+  FILE *f;
+  Char prefs_path[512];
+  Char *home;
+  
+  home = getenv("HOME");
+  if (home == NULL)
+    return;
+  
+  sprintf(prefs_path, "%s/.chipmunk", home);
+  f = fopen(prefs_path, "w");
+  if (f == NULL)
+    return;
+  
+  fprintf(f, "# Chipmunk preferences file\n");
+  fprintf(f, "# Automatically generated - do not edit manually\n\n");
+  
+  /* Save last opened file for current page */
+  if (curfilename[gg.curpage - 1] != NULL) {
+    fprintf(f, "last_file=%s\n", curfilename[gg.curpage - 1]);
+  }
+  
+  /* Save window geometry */
+  fprintf(f, "window_width=%d\n", across);
+  fprintf(f, "window_height=%d\n", baseline);
+  
+  fclose(f);
+}
+
+/* Load preferences from ~/.chipmunk */
+Static Void load_chipmunk_prefs(last_file)
+Char *last_file;
+{
+  FILE *f;
+  Char prefs_path[512];
+  Char line[512];
+  Char *home, *equals;
+  
+  *last_file = '\0';
+  
+  home = getenv("HOME");
+  if (home == NULL)
+    return;
+  
+  sprintf(prefs_path, "%s/.chipmunk", home);
+  f = fopen(prefs_path, "r");
+  if (f == NULL)
+    return;
+  
+  while (fgets(line, sizeof(line), f) != NULL) {
+    /* Remove newline */
+    line[strcspn(line, "\n")] = '\0';
+    
+    /* Skip comments and empty lines */
+    if (line[0] == '#' || line[0] == '\0')
+      continue;
+    
+    /* Parse key=value pairs */
+    equals = strchr(line, '=');
+    if (equals != NULL) {
+      *equals = '\0';
+      if (strcmp(line, "last_file") == 0) {
+        strcpy(last_file, equals + 1);
+      }
+      /* Window geometry is handled by init code */
+    }
+  }
+  
+  fclose(f);
+}
 
 Static Void initscreen()
 {
@@ -18084,6 +18187,11 @@ Char *filename_;
     if (curfilename[pgnum - 1] == NULL)
       curfilename[pgnum - 1] = (Char *)Malloc(256);
     strcpy(curfilename[pgnum - 1], filename);
+    /* Update window title when file is saved */
+    if (pgnum == gg.curpage) {
+      update_window_title_with_file(filename);
+      save_chipmunk_prefs();
+    }
   }
   if (f != NULL)
     fclose(f);
@@ -19069,6 +19177,9 @@ Char *reason_;
     if (curfilename[gg.curpage - 1] == NULL)
       curfilename[gg.curpage - 1] = (Char *)Malloc(256);
     strcpy(curfilename[gg.curpage - 1], filename);
+    /* Update window title when file is loaded */
+    update_window_title_with_file(filename);
+    save_chipmunk_prefs();
   }
 }
 
@@ -19525,6 +19636,9 @@ Char *reason_;
   if (curfilename[gg.curpage - 1] == NULL)
     curfilename[gg.curpage - 1] = (Char *)Malloc(256);
   strcpy(curfilename[gg.curpage - 1], filename);
+  /* Update window title when file is loaded */
+  update_window_title_with_file(filename);
+  save_chipmunk_prefs();
   if (f != NULL)
     fclose(f);
 }

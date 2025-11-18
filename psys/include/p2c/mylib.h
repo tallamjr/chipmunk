@@ -147,6 +147,7 @@ extern void m_init_pen PP((int));
 extern void m_init_graphics PV();
 extern void m_init_graphics_nopen PV();
 extern void m_init_dzg PV();
+extern void m_set_window_title PP((const char *));
 extern void m_modern PP((int));
 extern void m_version PP((int));
 extern long m_curversion PV();
