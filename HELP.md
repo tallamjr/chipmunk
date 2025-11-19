@@ -87,11 +87,12 @@
 
 ## Sample Circuits
 
-Interactive tutorial circuits are available in `log/lib/`:
+Interactive tutorial circuits are available in the `lessons/` directory:
 - **`lesson1.lgf`**: First tutorial (opens automatically)
-- **`lesson2.lgf`**, **`lesson3.lgf`**, etc.: Additional tutorials
+- **`lesson2.lgf`**, **`lesson3.lgf`**, **`lesson4.lgf`**, **`lesson5.lgf`**: Additional tutorials
+- **`nfet.lgf`**: NFET transistor characterization example
 
-Open a circuit: `./bin/analog log/lib/lesson1.lgf`
+Open a circuit: `./bin/analog lessons/lesson1.lgf`
 
 ## Configuration Files
 
