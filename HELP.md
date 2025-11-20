@@ -103,6 +103,20 @@ Default configuration files are in `log/lib/`:
 
 Use custom config: `./bin/analog -c log/lib/custom.cnf`
 
+## Environment Variables
+
+Chipmunk-specific environment variables that affect behavior:
+
+- **`CHIPMUNK_LAUNCH_DIR`**: Automatically set by the `bin/analog` wrapper script to your current working directory. Used to resolve relative file paths for `:load` and `:save` commands, ensuring files are loaded/saved relative to where you launched the program, not the internal working directory.
+
+- **`CHIPMUNK_MODE`**: Automatically set to `analog` by the wrapper script. Affects window naming (main window shows "analog" instead of "log").
+
+- **`CHIPMUNK_DEBUG_ESC`**: Set to `1` to enable debug logging for Escape/Ctrl-C key detection. Useful for troubleshooting keyboard input issues.
+
+- **`CHIPMUNK_DEBUG_ESC_FILE`**: Set to a file path to redirect debug output (from `CHIPMUNK_DEBUG_ESC`) to a file instead of stderr. Example: `CHIPMUNK_DEBUG_ESC_FILE=debug.log`.
+
+**Note**: The wrapper script (`bin/analog`) automatically sets `CHIPMUNK_LAUNCH_DIR` and `CHIPMUNK_MODE`. You typically don't need to set these manually unless running `diglog` directly.
+
 ## Complete Documentation
 
 For comprehensive documentation, tutorials, and advanced features:
