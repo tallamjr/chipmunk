@@ -77,8 +77,24 @@ jobs:
           file bin/diglog
           echo "Checking diglog is executable:"
           ls -lh bin/diglog
-          echo "Testing diglog launches:"
-          timeout 2 bin/diglog --help || echo "Binary executed (exit expected)"
+          set +e
+          echo "Testing binary can be executed:"
+          if [ "${{ matrix.os }}" = "macos" ]; then
+            # macOS: Use perl-based timeout (perl is pre-installed)
+            OUTPUT=$(perl -e 'alarm shift @ARGV; exec @ARGV' 2 bin/diglog 2>&1)
+          else
+            # Linux: Use standard timeout command
+            OUTPUT=$(timeout 2 bin/diglog 2>&1)
+          fi
+          set -e
+          echo "$OUTPUT"
+          # Success if we see either startup screen OR display error (both prove binary executed)
+          if echo "$OUTPUT" | grep -qE "(Chipmunk|Could not open display)"; then
+            echo "✓ Binary executed successfully"
+          else
+            echo "✗ Binary failed to execute properly"
+            exit 1
+          fi
 
       - name: Create distribution package
         run: |
