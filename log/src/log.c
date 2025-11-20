@@ -17931,6 +17931,7 @@ Char *filename_;
   short i, j, count, numvw, numnodes;
   Char STR1[9];
   Char STR2[256];
+  Char fullpath[512];  /* Buffer for constructing full path */
   short FORLIM;
 
   strcpy(filename, filename_);
@@ -17950,8 +17951,8 @@ Char *filename_;
 	    launch_dir != NULL ? launch_dir : "(null)");
     if (launch_dir != NULL && *launch_dir != '\0') {
       /* Prepend launch directory to relative filename */
-      sprintf(STR1, "%s/%s", launch_dir, filename);
-      strcpy(filename, STR1);
+      sprintf(fullpath, "%s/%s", launch_dir, filename);
+      strcpy(filename, fullpath);
       fprintf(stderr, "[DEBUG savepage] After prepending launch_dir: '%s'\n", filename);
     } else {
       /* If CHIPMUNK_LAUNCH_DIR not set, try to use directory of loaded file if available */
@@ -17965,8 +17966,8 @@ Char *filename_;
 	  long dir_len = last_slash - curfilename[pgnum - 1];
 	  strncpy(savedir, curfilename[pgnum - 1], dir_len);
 	  savedir[dir_len] = '\0';
-	  sprintf(STR1, "%s/%s", savedir, filename);
-	  strcpy(filename, STR1);
+	  sprintf(fullpath, "%s/%s", savedir, filename);
+	  strcpy(filename, fullpath);
 	  fprintf(stderr, "[DEBUG savepage] After using curfilename dir: '%s'\n", filename);
 	} else {
 	  fprintf(stderr, "[DEBUG savepage] No / in curfilename, using relative path\n");
