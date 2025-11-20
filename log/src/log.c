@@ -17936,6 +17936,18 @@ Char *filename_;
   strcpy(filename, filename_);
   f = NULL;
   newci_fixfname(filename, "lgf", "");
+  
+  /* If filename is relative (not absolute path), save to launch directory if available */
+  /* This ensures saves go to the same place as loads (user's working directory) */
+  if (*filename != '\0' && filename[0] != '/' && filename[0] != '~') {
+    char *launch_dir = getenv("CHIPMUNK_LAUNCH_DIR");
+    if (launch_dir != NULL && *launch_dir != '\0') {
+      /* Prepend launch directory to relative filename */
+      sprintf(STR1, "%s/%s", launch_dir, filename);
+      strcpy(filename, STR1);
+    }
+  }
+  
   if (*filename != '\0' && pageempty(pgnum) && access(filename, F_OK) == 0) {
     sprintf(STR2, "File %s not overwritten with empty page!", filename);
     message(STR2);
