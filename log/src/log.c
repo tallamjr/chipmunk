@@ -19353,6 +19353,8 @@ Static Void loadcommand()
   } else
     strcpy(filename, gg.funcarg);
   if (*filename != '\0') {
+    /* Add .lgf extension if not present */
+    newci_fixfname(filename, "lgf", "");
     beginbottom();
     TRY(try27);
       printf("Loading file %s\n", filename);
