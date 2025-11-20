@@ -18278,6 +18278,7 @@ Char *fn;
 {
   long i, j;
   Char saved_path[256];
+  Char msg[512];
 
   if (*fn == '\0')
     return;
@@ -18293,9 +18294,9 @@ Char *fn;
       strcpy(saved_path, curfilename[pgnum - 1]);
     }
     endbottom();
-    beginbottom();
-    printf("File saved to: %s\n", saved_path);
-    endbottom();
+    /* Show confirmation message in message area */
+    sprintf(msg, "File saved to: %s", saved_path);
+    message(msg);
   RECOVER(try26);
     i = P_escapecode;
     j = P_ioresult;
